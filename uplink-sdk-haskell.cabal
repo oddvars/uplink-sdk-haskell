@@ -1,0 +1,57 @@
+name:                uplink-sdk-haskell
+version:             0.1.0.0
+-- synopsis:
+-- description:
+homepage:            https://github.com/githubuser/uplink-sdk-haskell#readme
+license:             BSD3
+license-file:        LICENSE
+author:              Author name here
+maintainer:          example@example.com
+copyright:           2017 Author name here
+category:            Web
+build-type:          Simple
+cabal-version:       >=1.10
+extra-source-files:  README.md
+
+library
+  hs-source-dirs:      src
+  ghc-options:         -Wall
+  exposed-modules:     Uplink
+                       Uplink.Client
+                       Uplink.Client.Account
+                       Uplink.Client.AssetAddress
+                       Uplink.Client.Config
+                       Uplink.Client.Contract
+                       Uplink.Client.REST
+                       Uplink.Client.Op
+  build-depends:       base >= 4.7 && < 5
+                     , aeson
+                     , aeson-pretty
+                     , base58-bytestring
+                     , bytestring
+                     , cereal
+                     , datetimes
+                     , http-client
+                     , http-types
+                     , merkle-tree
+                     , protolude >= 0.2
+                     , text
+                     , transformers
+                     , unordered-containers
+                     , uplink
+  default-language:    Haskell2010
+
+executable uplink-sdk-haskell-exe
+  hs-source-dirs:      app 
+  main-is:             Main.hs
+  default-language:    Haskell2010
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base
+                     , aeson
+                     , aeson-pretty
+                     , containers
+                     , unordered-containers
+                     , text
+                     , uplink
+                     , uplink-sdk-haskell
+                     , vector
