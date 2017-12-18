@@ -6,7 +6,6 @@ import qualified Address
 import           Data.Aeson
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
-import           Data.Maybe (maybe)
 import qualified Key
 import qualified Uplink
 
@@ -28,8 +27,8 @@ main = do
       --let assetId = "J1qbWXdZ4nAVZuch5tSUeoXuX8j37vP98aum4RcPzfvN"
       --Uplink.withHandle (`Uplink.uplinkAsset` assetId) >>= print
 
-      Uplink.withHandle cfg (`Uplink.uplinkAssets` cfg) >>= print
-      Uplink.withHandle cfg (`Uplink.createAsset` cfg)  >>= print
+      Uplink.withHandle cfg Uplink.uplinkAssets >>= print
+      Uplink.withHandle cfg Uplink.createAsset  >>= print
 
   where origin :: Maybe Account.Account -> Address.Address
         origin Nothing =   Address.parseAddress ""

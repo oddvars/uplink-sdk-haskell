@@ -32,11 +32,12 @@ instance ToJSON Cmd where
 
 withHandle :: Config.Config -> (Uplink.Handle -> IO (Uplink.Item a)) -> IO (Uplink.Item a)
 withHandle cfg f = f Uplink.Handle
-  { Uplink.getAccounts  = loadAccounts
-  , Uplink.getAssets    = loadAssets
-  , Uplink.getAsset     = loadAsset
-  , Uplink.getContracts = loadContracts
-  , Uplink.createAsset  = createAsset
+  { Uplink.config       = cfg
+  , Uplink.getAccounts  = loadAccounts cfg
+  , Uplink.getAssets    = loadAssets cfg
+  , Uplink.getAsset     = loadAsset cfg
+  , Uplink.getContracts = loadContracts cfg
+  , Uplink.createAsset  = createAsset cfg
   }
 
 createAsset :: Config.Config -> IO (Uplink.Item ())
@@ -57,20 +58,20 @@ createAsset cfg = do
   print rpc
   push cfg rpc
 
-loadAccounts :: String -> Config.Config -> IO (Uplink.Item [Uplink.Account])
-loadAccounts url = fetch url ""
+loadAccounts :: Config.Config -> String -> IO (Uplink.Item [Uplink.Account])
+loadAccounts cfg url = fetch cfg url ""
 
-loadAssets :: String -> Config.Config -> IO (Uplink.Item [Uplink.AssetAddress])
+loadAssets :: Config.Config -> String -> IO (Uplink.Item [Uplink.AssetAddress])
 loadAssets url = fetch url ""
 
-loadAsset :: String -> String -> Config.Config -> IO (Uplink.Item Uplink.Asset)
+loadAsset :: Config.Config -> String -> String -> IO (Uplink.Item Uplink.Asset)
 loadAsset = fetch
 
-loadContracts :: String -> Config.Config -> IO (Uplink.Item [Uplink.Contract])
+loadContracts :: Config.Config -> String -> IO (Uplink.Item [Uplink.Contract])
 loadContracts url = fetch url ""
 
-fetch :: FromJSON a => String -> String -> Config.Config -> IO (Uplink.Item a)
-fetch s _id cfg = do
+fetch :: FromJSON a =>  Config.Config -> String -> String -> IO (Uplink.Item a)
+fetch cfg s _id = do
   man <- newManager defaultManagerSettings
   initReq <- parseRequest $ "http://127.0.0.1:8545" ++ s ++ "/" ++ _id
   let req = initReq { method = "POST" }

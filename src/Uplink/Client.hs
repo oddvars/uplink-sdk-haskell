@@ -29,21 +29,22 @@ import qualified Data.Text as T
 type Item a = Either T.Text a
 
 data Handle = Handle
-  { getAccounts  :: String -> Config.Config -> IO (Item [Account.Account])
-  , getAssets    :: String -> Config.Config -> IO (Item [AssetAddress.AssetAddress])
-  , createAsset  :: Config.Config -> IO (Item ())
-  , getAsset     :: String -> String -> Config.Config -> IO (Item Asset.Asset)
-  , getContracts :: String -> Config.Config -> IO (Item [Contract.Contract])
+  { config       :: Config.Config
+  , getAccounts  :: String -> IO (Item [Account.Account])
+  , getAssets    :: String -> IO (Item [AssetAddress.AssetAddress])
+  , createAsset  :: IO (Item ())
+  , getAsset     :: String -> String -> IO (Item Asset.Asset)
+  , getContracts :: String -> IO (Item [Contract.Contract])
   }
 
-uplinkAssets :: Handle -> Config.Config -> IO (Item [AssetAddress.AssetAddress])
+uplinkAssets :: Handle -> IO (Item [AssetAddress.AssetAddress])
 uplinkAssets = (`getAssets` "/assets")
 
-uplinkAsset :: Handle -> String -> Config.Config -> IO (Item Asset.Asset)
+uplinkAsset :: Handle -> String -> IO (Item Asset.Asset)
 uplinkAsset h = getAsset h "/assets"
 
-uplinkContracts :: Handle -> Config.Config -> IO (Item [Contract.Contract])
+uplinkContracts :: Handle -> IO (Item [Contract.Contract])
 uplinkContracts = (`getContracts` "/contracts")
 
-uplinkAccounts :: Handle -> Config.Config -> IO (Item [Account.Account])
+uplinkAccounts :: Handle -> IO (Item [Account.Account])
 uplinkAccounts = (`getAccounts` "/accounts")

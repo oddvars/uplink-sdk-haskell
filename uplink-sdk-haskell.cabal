@@ -49,6 +49,7 @@ executable uplink-sdk-haskell-exe
   build-depends:       base
                      , aeson
                      , aeson-pretty
+                     , bytestring
                      , containers
                      , unordered-containers
                      , text
