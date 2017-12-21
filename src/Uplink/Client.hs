@@ -11,10 +11,14 @@ module Uplink.Client
   , Op.Op (..)
   , Config.Config (..)
   , Item
+  , Path
 
   , mkAddress
+  , mkPath
+  , mkPathWithId
   , mkSafeString
 
+  , unpath
   , uplinkAccounts
   , uplinkAssets
   , uplinkAsset
@@ -24,6 +28,7 @@ module Uplink.Client
 
 import qualified Address
 import qualified Asset
+import qualified Data.ByteString as BS
 import           Data.Int
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
@@ -37,6 +42,15 @@ import qualified Uplink.Client.Config as Config
 import qualified Uplink.Client.Op as Op
 
 type Item a = Either T.Text a
+
+data Path = Path { unpath :: BS.ByteString }
+
+mkPath :: String -> Path
+mkPath = Path <$> T.encodeUtf8 . T.pack
+
+mkPathWithId :: String -> String -> Path
+mkPathWithId p _id = Path <$> T.encodeUtf8 . T.pack $ p ++ "/" ++ _id
+
 
 data CreateAsset = CreateAsset
   { assetAddress :: Address.Address
@@ -52,21 +66,21 @@ mkSafeString = SafeString.fromBytes' . T.encodeUtf8
 
 data Handle = Handle
   { config       :: Config.Config
-  , getAccounts  :: String -> IO (Item [Account.Account])
-  , getAssets    :: String -> IO (Item [AssetAddress.AssetAddress])
+  , getAccounts  :: Path -> IO (Item [Account.Account])
+  , getAssets    :: Path -> IO (Item [AssetAddress.AssetAddress])
   , createAsset  :: CreateAsset -> IO (Item ())
-  , getAsset     :: String -> String -> IO (Item Asset.Asset)
-  , getContracts :: String -> IO (Item [Contract.Contract])
+  , getAsset     :: Path -> IO (Item Asset.Asset)
+  , getContracts :: Path -> IO (Item [Contract.Contract])
   }
 
-uplinkAssets :: Handle  -> IO (Item [AssetAddress.AssetAddress])
-uplinkAssets = (`getAssets` "assets")
+uplinkAssets :: Handle -> IO (Item [AssetAddress.AssetAddress])
+uplinkAssets = (`getAssets` mkPath "assets")
 
-uplinkAsset :: Handle  -> String -> IO (Item Asset.Asset)
-uplinkAsset = (`getAsset` "/assets")
+uplinkAsset :: Handle -> String -> IO (Item Asset.Asset)
+uplinkAsset h assetId =  getAsset h (mkPathWithId "/assets" assetId)
 
 uplinkContracts :: Handle  -> IO (Item [Contract.Contract])
-uplinkContracts = (`getContracts` "contracts")
+uplinkContracts = (`getContracts` mkPath "contracts")
 
 uplinkAccounts :: Handle -> IO (Item [Account.Account])
-uplinkAccounts = (`getAccounts` "accounts")
+uplinkAccounts = (`getAccounts` mkPath "accounts")
