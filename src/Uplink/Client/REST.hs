@@ -3,22 +3,25 @@ module Uplink.Client.REST
   ( withHandle
   )
   where
+
 import           Data.Aeson
-import qualified Address
-import qualified Asset
+import           Data.Maybe
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy as BSL
 import qualified Data.Serialize as S
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import           Network.HTTP.Client
 import           Network.HTTP.Types
+
+
+import qualified Asset
+import qualified Key
 import qualified RPC
 import qualified Time
-import qualified Uplink.Client as Uplink
-import qualified Uplink.Client.Config as Config
+import qualified Uplink.Client as U
+import qualified Uplink.Client.Config as Cfg
 import qualified Transaction as Tx
-import qualified SafeString
-import qualified Key
 
 data Cmd = Cmd
   { params :: Tx.Transaction
@@ -30,77 +33,65 @@ instance ToJSON Cmd where
                       , "method" .= method' cmd
                       ]
 
-withHandle :: Config.Config -> (Uplink.Handle -> IO (Uplink.Item a)) -> IO (Uplink.Item a)
-withHandle cfg f = f Uplink.Handle
-  { Uplink.config       = cfg
-  , Uplink.getAccounts  = loadAccounts cfg
-  , Uplink.getAssets    = loadAssets cfg
-  , Uplink.getAsset     = loadAsset cfg
-  , Uplink.getContracts = loadContracts cfg
-  , Uplink.createAsset  = createAsset cfg
+data Path = Path { unpath :: BS.ByteString }
+
+mkPath :: String -> Path
+mkPath = Path <$> T.encodeUtf8 . T.pack
+
+mkPathWithId :: String -> String -> Path
+mkPathWithId p _id = Path <$> T.encodeUtf8 . T.pack $ p ++ "/" ++ _id
+
+withHandle :: Cfg.Config -> (U.Handle -> IO (U.Item a)) -> IO (U.Item a)
+withHandle cfg f = f U.Handle
+  { U.config       = cfg
+  , U.getAccounts  = loadAccounts cfg
+  , U.getAssets    = loadAssets cfg
+  , U.getAsset     = loadAsset cfg
+  , U.getContracts = loadContracts cfg
+  , U.createAsset  = createAsset cfg
   }
 
-createAsset :: Config.Config -> IO (Uplink.Item ())
-createAsset cfg = do
+loadAccounts :: Cfg.Config -> String -> IO (U.Item [U.Account])
+loadAccounts cfg url = post' cfg Nothing (mkPath url)
+
+createAsset :: Cfg.Config -> U.CreateAsset -> IO (U.Item ())
+createAsset cfg@(Cfg.Config priv orig _) (U.CreateAsset addr name qty) = do
+  let header = Tx.TxAsset (Tx.CreateAsset addr name qty (Just Asset.USD) Asset.Discrete)
+
   ts <- Time.now
-  address <- Address.newAddr
-  let origin = Config.originAddress cfg
-      name   = SafeString.fromBytes' ("create asset from haskell" :: BS.ByteString)
-      header = Tx.TxAsset (Tx.CreateAsset address name 1 (Just Asset.USD) Asset.Discrete)
+  sig <- Key.sign priv $ S.encode header
 
-  sig <- Key.sign (Config.privateKey cfg) $ S.encode header
+  post' cfg (Just (Cmd (Tx.Transaction header (Key.encodeSig sig) orig ts) "Transaction")) (mkPath "")
 
-  let
-      transFailing = Tx.Transaction header "" origin ts
-      transOk = Tx.Transaction header (Key.encodeSig sig) origin ts
-      rpc   = Cmd transFailing "Transaction"
+loadAssets :: Cfg.Config -> String -> IO (U.Item [U.AssetAddress])
+loadAssets cfg url = post' cfg Nothing (mkPath url)
 
-  print rpc
-  push cfg rpc
+loadAsset :: Cfg.Config -> String -> String -> IO (U.Item U.Asset)
+loadAsset cfg url _id = post' cfg Nothing (mkPathWithId url _id)
 
-loadAccounts :: Config.Config -> String -> IO (Uplink.Item [Uplink.Account])
-loadAccounts cfg url = fetch cfg url ""
+loadContracts :: Cfg.Config -> String -> IO (U.Item [U.Contract])
+loadContracts cfg url = post' cfg Nothing (mkPath url)
 
-loadAssets :: Config.Config -> String -> IO (Uplink.Item [Uplink.AssetAddress])
-loadAssets url = fetch url ""
-
-loadAsset :: Config.Config -> String -> String -> IO (Uplink.Item Uplink.Asset)
-loadAsset = fetch
-
-loadContracts :: Config.Config -> String -> IO (Uplink.Item [Uplink.Contract])
-loadContracts url = fetch url ""
-
-fetch :: FromJSON a =>  Config.Config -> String -> String -> IO (Uplink.Item a)
-fetch cfg s _id = do
+post' :: FromJSON a => Cfg.Config -> Maybe Cmd -> Path -> IO (U.Item a)
+post' cfg mcmd p = do
   man <- newManager defaultManagerSettings
-  initReq <- parseRequest $ "http://127.0.0.1:8545" ++ s ++ "/" ++ _id
-  let req = initReq { method = "POST" }
+  initReq <- parseRequest (Cfg.host cfg)
+  let req = if isJust mcmd then
+              initReq { method = "POST" , requestBody = RequestBodyLBS (encode (fromJust mcmd))}
+            else
+              initReq { method = "POST", path = unpath p }
   res <- httpLbs req man
-  return $
+  return $ handleResult res
+
+handleResult :: FromJSON a => Response BSL.ByteString -> U.Item a
+handleResult res =
     if responseStatus res == status200 then
       parse . eitherDecode . responseBody $ res
     else
-      Left (T.decodeUtf8 . statusMessage . responseStatus $ res) :: Uplink.Item a
+      Left (T.decodeUtf8 . statusMessage . responseStatus $ res) :: U.Item a
 
 
-push :: FromJSON a => Config.Config -> Cmd -> IO (Uplink.Item a)
-push cfg cmd = do
-  man <- newManager defaultManagerSettings
-  initReq <- parseRequest (Config.host cfg)
-  let req = initReq { method = "POST"
-                    , requestBody = RequestBodyLBS (encode cmd)
-                    }
-  res <- httpLbs req man
-  --print res
-  return $
-    if responseStatus res == status200 then
-      parse . eitherDecode . responseBody $ res
-    else
-      Left (T.decodeUtf8 . statusMessage . responseStatus $ res) :: Uplink.Item a
-
-
-
-parse :: FromJSON a => Either String RPC.RPCResponse -> Uplink.Item a
+parse :: FromJSON a => Either String RPC.RPCResponse -> U.Item a
 parse (Left e)                     = Left (T.pack e)
 parse (Right (RPC.RPCRespError e)) = Left (T.pack . show $ e)
 parse (Right (RPC.RPCResp a))      = mapLeft T.pack (eitherDecode (encode a))
