@@ -20,11 +20,13 @@ module Uplink.Client
   , mkSafeString
 
   , unpath
+  , uplinkAccount
   , uplinkAccounts
   , uplinkBlock
   , uplinkBlocks
   , uplinkAsset
   , uplinkAssets
+  , uplinkContract
   , uplinkContracts
   , uplinkPeers
   , uplinkValidators
@@ -72,6 +74,8 @@ mkSafeString = SafeString.fromBytes' . T.encodeUtf8
 
 data Handle = Handle
   { config        :: Config.Config
+  , createAsset   :: CreateAsset -> IO (Item ())
+  , getAccount    :: Path -> IO (Item Account.Account)
   , getAccounts   :: Path -> IO (Item [Account.Account])
   , getAsset      :: Path -> IO (Item Asset.Asset)
   , getAssets     :: Path -> IO (Item [AssetAddress.AssetAddress])
@@ -79,15 +83,18 @@ data Handle = Handle
   , getBlocks     :: Path -> IO (Item [Block.Block])
   , getPeers      :: Path -> IO (Item [Peer.Peer])
   , getValidators :: Path -> IO (Item [Peer.Peer])
-  , createAsset   :: CreateAsset -> IO (Item ())
+  , getContract   :: Path -> IO (Item Contract.Contract)
   , getContracts  :: Path -> IO (Item [Contract.Contract])
   }
+
+uplinkAccount :: Handle -> String -> IO (Item Account.Account)
+uplinkAccount h accountId = getAccount h $ mkPathWithId "/accounts" accountId
 
 uplinkAccounts :: Handle -> IO (Item [Account.Account])
 uplinkAccounts = (`getAccounts` mkPath "accounts")
 
 uplinkAsset :: Handle -> String -> IO (Item Asset.Asset)
-uplinkAsset h assetId =  getAsset h (mkPathWithId "/assets" assetId)
+uplinkAsset h assetId = getAsset h $ mkPathWithId "/assets" assetId
 
 uplinkAssets :: Handle -> IO (Item [AssetAddress.AssetAddress])
 uplinkAssets = (`getAssets` mkPath "assets")
@@ -97,6 +104,9 @@ uplinkBlock h blockId = getBlock h (mkPathWithId "/blocks" blockId)
 
 uplinkBlocks :: Handle -> IO (Item [Block.Block])
 uplinkBlocks = (`getBlocks` mkPath "blocks")
+
+uplinkContract :: Handle -> String -> IO (Item Contract.Contract)
+uplinkContract h contractId = getContract h $ mkPathWithId "/contracts" contractId
 
 uplinkContracts :: Handle  -> IO (Item [Contract.Contract])
 uplinkContracts = (`getContracts` mkPath "contracts")

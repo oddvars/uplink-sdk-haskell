@@ -2,14 +2,8 @@
     def uplink_transactions(self, block_id=0):
         transactions_by_id = 'transactions/{}'.format(block_id)
 
-    def uplink_get_account(self, address):
-        account_by_address = 'accounts/{}'.format(address)
-
     def uplink_version(self):
         return self._call('GET', endpoint='version')
-
-    def uplink_get_contract(self, address):
-        contract_by_address = 'contracts/{}'.format(address)
 
     def uplink_get_contract_callable(self, address):
         contract_by_address = 'contracts/{}/callable'.format(address)

@@ -32,10 +32,5 @@ main = do
 
 runExample :: U.Config ->  IO ()
 runExample cfg = do
-  --newAddr <- U.mkAddress
-  --let ca      = U.CreateAsset newAddr (U.mkSafeString "name") 100
-  --    assetId = "J1qbWXdZ4nAVZuch5tSUeoXuX8j37vP98aum4RcPzfvN"
-
-  --U.withHandle cfg (`U.uplinkAsset` assetId) >>= print
-
-  U.withHandle cfg U.uplinkValidators >>= print
+  U.withHandle cfg U.uplinkContracts >>= print
+  U.withHandle cfg (`U.uplinkContract` "5iPNiNwhnyYxQ1Qn496csxKVsiDs12nq1XCY5DVZeTgM") >>= print

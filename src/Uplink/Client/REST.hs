@@ -35,19 +35,24 @@ instance ToJSON Cmd where
 withHandle :: Cfg.Config -> (U.Handle -> IO (U.Item a)) -> IO (U.Item a)
 withHandle cfg f = f U.Handle
   { U.config        = cfg
+  , U.getAccount    = getAccount cfg
   , U.getAccounts   = getAccounts cfg
   , U.getAsset      = getAsset cfg
   , U.getAssets     = getAssets cfg
   , U.getBlock      = getBlock cfg
   , U.getBlocks     = getBlocks cfg
+  , U.getContract   = getContract cfg
   , U.getContracts  = getContracts cfg
   , U.getPeers      = getPeers cfg
   , U.getValidators = getValidators cfg
   , U.createAsset   = createAsset cfg
   }
 
+getAccount :: Cfg.Config -> U.Path -> IO (U.Item U.Account)
+getAccount = flip post' Nothing
+
 getAccounts :: Cfg.Config -> U.Path -> IO (U.Item [U.Account])
-getAccounts cfg = post' cfg Nothing
+getAccounts = flip post' Nothing
 
 createAsset :: Cfg.Config -> U.CreateAsset -> IO (U.Item ())
 createAsset cfg@(Cfg.Config priv orig _) (U.CreateAsset addr name qty) = do
@@ -59,25 +64,28 @@ createAsset cfg@(Cfg.Config priv orig _) (U.CreateAsset addr name qty) = do
   post' cfg (Just (Cmd (Tx.Transaction header (Key.encodeSig sig) orig ts) "Transaction")) (U.mkPath "")
 
 getAssets :: Cfg.Config -> U.Path -> IO (U.Item [U.AssetAddress])
-getAssets cfg = post' cfg Nothing
+getAssets = flip post' Nothing
 
 getBlocks :: Cfg.Config -> U.Path -> IO (U.Item [U.Block])
-getBlocks cfg = post' cfg Nothing
+getBlocks = flip post' Nothing
 
 getBlock :: Cfg.Config -> U.Path -> IO (U.Item U.Block)
-getBlock cfg = post' cfg Nothing
+getBlock = flip post' Nothing
 
 getAsset :: Cfg.Config -> U.Path -> IO (U.Item Asset.Asset)
-getAsset cfg = post' cfg Nothing
+getAsset = flip post' Nothing
+
+getContract :: Cfg.Config -> U.Path -> IO (U.Item U.Contract)
+getContract = flip post' Nothing
 
 getContracts :: Cfg.Config -> U.Path -> IO (U.Item [U.Contract])
-getContracts cfg = post' cfg Nothing
+getContracts = flip post' Nothing
 
 getPeers :: Cfg.Config -> U.Path -> IO (U.Item [U.Peer])
-getPeers cfg = post' cfg Nothing
+getPeers = flip post' Nothing
 
 getValidators :: Cfg.Config -> U.Path -> IO (U.Item [U.Peer])
-getValidators cfg = post' cfg Nothing
+getValidators = flip post' Nothing
 
 post' :: FromJSON a => Cfg.Config -> Maybe Cmd -> U.Path -> IO (U.Item a)
 post' cfg mcmd p = do
