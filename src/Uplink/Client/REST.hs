@@ -6,7 +6,6 @@ module Uplink.Client.REST
 
 import           Data.Aeson
 import           Data.Maybe
---import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.Serialize as S
 import qualified Data.Text as T
@@ -36,15 +35,18 @@ instance ToJSON Cmd where
 withHandle :: Cfg.Config -> (U.Handle -> IO (U.Item a)) -> IO (U.Item a)
 withHandle cfg f = f U.Handle
   { U.config       = cfg
-  , U.getAccounts  = loadAccounts cfg
-  , U.getAssets    = loadAssets cfg
-  , U.getAsset     = loadAsset cfg
-  , U.getContracts = loadContracts cfg
+  , U.getAccounts  = getAccounts cfg
+  , U.getAsset     = getAsset cfg
+  , U.getAssets    = getAssets cfg
+  , U.getBlock     = getBlock cfg
+  , U.getBlocks    = getBlocks cfg
+  , U.getContracts = getContracts cfg
+  , U.getPeers     = getPeers cfg
   , U.createAsset  = createAsset cfg
   }
 
-loadAccounts :: Cfg.Config -> U.Path -> IO (U.Item [U.Account])
-loadAccounts cfg = post' cfg Nothing
+getAccounts :: Cfg.Config -> U.Path -> IO (U.Item [U.Account])
+getAccounts cfg = post' cfg Nothing
 
 createAsset :: Cfg.Config -> U.CreateAsset -> IO (U.Item ())
 createAsset cfg@(Cfg.Config priv orig _) (U.CreateAsset addr name qty) = do
@@ -55,14 +57,23 @@ createAsset cfg@(Cfg.Config priv orig _) (U.CreateAsset addr name qty) = do
 
   post' cfg (Just (Cmd (Tx.Transaction header (Key.encodeSig sig) orig ts) "Transaction")) (U.mkPath "")
 
-loadAssets :: Cfg.Config -> U.Path -> IO (U.Item [U.AssetAddress])
-loadAssets cfg = post' cfg Nothing
+getAssets :: Cfg.Config -> U.Path -> IO (U.Item [U.AssetAddress])
+getAssets cfg = post' cfg Nothing
 
-loadAsset :: Cfg.Config -> U.Path -> IO (U.Item U.Asset)
-loadAsset cfg = post' cfg Nothing
+getBlocks :: Cfg.Config -> U.Path -> IO (U.Item [U.Block])
+getBlocks cfg = post' cfg Nothing
 
-loadContracts :: Cfg.Config -> U.Path -> IO (U.Item [U.Contract])
-loadContracts cfg = post' cfg Nothing
+getBlock :: Cfg.Config -> U.Path -> IO (U.Item U.Block)
+getBlock cfg = post' cfg Nothing
+
+getAsset :: Cfg.Config -> U.Path -> IO (U.Item Asset.Asset)
+getAsset cfg = post' cfg Nothing
+
+getContracts :: Cfg.Config -> U.Path -> IO (U.Item [U.Contract])
+getContracts cfg = post' cfg Nothing
+
+getPeers :: Cfg.Config -> U.Path -> IO (U.Item [U.Peer])
+getPeers cfg = post' cfg Nothing
 
 post' :: FromJSON a => Cfg.Config -> Maybe Cmd -> U.Path -> IO (U.Item a)
 post' cfg mcmd p = do

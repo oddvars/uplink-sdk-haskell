@@ -1,31 +1,4 @@
 {-
-
-    def uplink_reset_db(self, private_key, public_key):
-        """Reset uplink database"""
-        address = derive_account_address(public_key)
-        r, s = ecdsa_sign(private_key, address)
-        signature = pack_signature(r, s)
-
-        params = {
-            "method": "ResetDB",
-            "params": {
-                "address": address,
-                "signature": signature
-            }
-        }
-
-        result = self._call("Test", params=params)
-        return result
-
-    def uplink_block(self, block_id):
-        block_by_id = 'blocks/{}'.format(block_id)
-
-    def uplink_blocks(self, count=1):
-        result = self._call('GET', endpoint='blocks')
-
-    def uplink_peers(self):
-        result = self._call('GET', endpoint='peers')
-
     def uplink_validators(self):
         result = self._call('GET', endpoint='peers/validators')
 
@@ -35,14 +8,8 @@
     def uplink_get_account(self, address):
         account_by_address = 'accounts/{}'.format(address)
 
-    def uplink_get_asset(self, address):
-        asset_by_address = 'assets/{}'.format(address)
-
     def uplink_version(self):
         return self._call('GET', endpoint='version')
-
-    def uplink_contracts(self):
-        result = self._call('GET', endpoint='contracts')
 
     def uplink_get_contract(self, address):
         contract_by_address = 'contracts/{}'.format(address)
@@ -300,53 +267,3 @@
             return result
         else:
             raise UplinkJsonRpcError("Malformed SyncLocal", result)
-
-
-
-
-
-
-
-
-
-
-
-127.000.000.001.34592-127.000.000.001.08545: POST / HTTP/1.1
-Host: localhost:8545
-Connection: keep-alive
-Accept-Encoding: gzip, deflate
-Accept: */*
-User-Agent: python-requests/2.11.1
-Content-Length: 664
-
-{"params": {"origin": "7hk8zkaMbcma9LgdsMMzN7EX24QExQmLdrhMsnCE3kvX", "header": {"tag": "TxAsset", "contents": {"tag": "CreateAsset", "contents": {"assetType": {"tag": "Discrete", "contents": null}, "reference": "EUR", "supply": 2, "assetAddr": "2txtGkwvnF1d6LLRoX5gFu3d9GQWtGDXqRAUToeXYw1Q", "assetName": "asdf", "issuer": "7hk8zkaMbcma9LgdsMMzN7EX24QExQmLdrhMsnCE3kvX"}}}, "signature": "AE4xMDMwMTg0NjY4NDg4MDg3NjgzNjQ0OTI4MTI3MTY1OTA2MTE1Njg5NzkxNjk1ODE5OTA0MzAzNDg4NTM0Njg1NTYzNDk1OTcyNzM3ODI6AE0zMDI4Njk4NjkzNTIwNzgyODk0MTA0MTE5NTc1MTU1MTU3NTM1NTUzMTg5NDAyODAyNDM3NDgyMzgzOTExMjA2MjQzNTY1NDIyMzY0OQ==", "timestamp": 1513445589031953}, "method": "Transaction"}
-
-127.000.000.001.08545-127.000.000.001.34592: HTTP/1.1 200 OK
-Transfer-Encoding: chunked
-Date: Sat, 16 Dec 2017 17:33:09 GMT
-Server: Uplink/0.1 (Unix)
-Content-Type: application/json; charset=utf-8
-
-0013
-{"tag":"RPCRespOK"}
-0
-
-
-
--}
-RPC Recieved Transaction:
-	Transaction {header = TxAsset (CreateAsset {assetAddr = BTp8QQKKmrevr1QJfcUxkHjNspydrcnHiijBLc63miqH, assetName = "asdf", supply = 2, reference = Just USD, assetType = Discrete}), signature = "AE0yMzIwMDY3Njg5NTQ2MDE2NzIzMTA3NDAxODk3MTYwODk0NDQ0ODgzNzMzNDkwMzQ3Mjg0ODE5MjYwMDA5NTEzNzI3NDcwNDY2NjI3ODoATjExMDI2OTI1MTc3ODY5NTIzNzg5ODIzMzQzNzM1NzgyOTE5NjEzMTE4NzgyMTAwNzQ5NjEzMDA2MTc3MTY4MjY2MTA1Nzk2NTM1NTYzNA==", origin = 7hk8zkaMbcma9LgdsMMzN7EX24QExQmLdrhMsnCE3kvX, timestamp = 1513538134596915}
-
-Recieved Cmd from RPC:
-	Transaction (Transaction {header = TxAsset (CreateAsset {assetAddr = BTp8QQKKmrevr1QJfcUxkHjNspydrcnHiijBLc63miqH, assetName = "asdf", supply = 2, reference = Just USD, assetType = Discrete}), signature = "AE0yMzIwMDY3Njg5NTQ2MDE2NzIzMTA3NDAxODk3MTYwODk0NDQ0ODgzNzMzNDkwMzQ3Mjg0ODE5MjYwMDA5NTEzNzI3NDcwNDY2NjI3ODoATjExMDI2OTI1MTc3ODY5NTIzNzg5ODIzMzQzNzM1NzgyOTE5NjEzMTE4NzgyMTAwNzQ5NjEzMDA2MTc3MTY4MjY2MTA1Nzk2NTM1NTYzNA==", origin = 7hk8zkaMbcma9LgdsMMzN7EX24QExQmLdrhMsnCE3kvX, timestamp = 1513538134596915})
-Requesting peer list from local controller...
-127.0.0.1 - - [17/Dec/2017:20:15:34 +0100] "POST / HTTP/1.1" 200 - "" "python-requests/2.11.1"
-
---
-
-	Transaction {header = TxAsset (CreateAsset {assetAddr = 9MoY2ejwLnJKMQDEaDUKiKXFYf9hMv31EUaf8aYpseAk, assetName = "from explorer", supply = 999, reference = Just CHF, assetType = Discrete}), signature = "AE04NzA0NzIyMDAwMzA2MzAwODE2NjE2MDUxODQzOTExNzk2NTM0MjM2MTUxMjgzMTE3Mzc4NzE0MzEyODQzMjAzODQwOTY2MDM4OTY4MzoATTY1NjY1Nzc1NjA1NzI4NDEyNTU3ODgzNDEzNzQwMzQ3NTA1MDE0MjgwODI1NDI2OTU0OTczNzAyODA5OTU0MzQ5OTMwODM3NzkyMTE5", origin = 7hk8zkaMbcma9LgdsMMzN7EX24QExQmLdrhMsnCE3kvX, timestamp = 1513542677624735}
-
-
-Transaction {header = TxAsset (CreateAsset {assetAddr = 7hk8zkaMbcma9LgdsMMzN7EX24QExQmLdrhMsnCE3kvX, assetName = "create asset from haskell", supply = 1, reference = Just USD, assetType = Discrete}), signature = "AEw5NDUwMzIxMDk1MTYyNzQxNTQ4NzU0OTY2MjI5ODM1NzgxMTg5NzAyOTE5MDE5Mzk1Njc4OTA4NjY5ODQ4NTA5MTM4ODg5ODUyNzc1OgBOMTEzNjEzMTc5MDcxMjE0MDE5NzY4MzAwMjkwMTU2NDg2OTA1NzA2Mjc2MjcxMDgyMjQ4NjM3MjIzNDU0MDIzNTEyNjQ3OTg1NTYwNjMx", origin = 7hk8zkaMbcma9LgdsMMzN7EX24QExQmLdrhMsnCE3kvX, timestamp = 1513542726013092}
-
-

@@ -32,12 +32,10 @@ main = do
 
 runExample :: U.Config ->  IO ()
 runExample cfg = do
-  newAddr <- U.mkAddress
+  --newAddr <- U.mkAddress
+  --let ca      = U.CreateAsset newAddr (U.mkSafeString "name") 100
+  --    assetId = "J1qbWXdZ4nAVZuch5tSUeoXuX8j37vP98aum4RcPzfvN"
 
-  let ca      = U.CreateAsset newAddr (U.mkSafeString "name") 100
-      assetId = "J1qbWXdZ4nAVZuch5tSUeoXuX8j37vP98aum4RcPzfvN"
+  --U.withHandle cfg (`U.uplinkAsset` assetId) >>= print
 
-  U.withHandle cfg (`U.uplinkAsset` assetId) >>= print
-  --assets <- U.withHandle cfg U.uplinkAssets
-  --U.withHandle cfg (`U.createAsset` ca)
-  --print assets
+  U.withHandle cfg U.uplinkPeers >>= print
