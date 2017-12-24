@@ -27,6 +27,7 @@ module Uplink.Client
   , uplinkAssets
   , uplinkContracts
   , uplinkPeers
+  , uplinkValidators
 
   ) where
 
@@ -70,15 +71,16 @@ mkSafeString :: T.Text -> SafeString.SafeString
 mkSafeString = SafeString.fromBytes' . T.encodeUtf8
 
 data Handle = Handle
-  { config       :: Config.Config
-  , getAccounts  :: Path -> IO (Item [Account.Account])
-  , getAsset     :: Path -> IO (Item Asset.Asset)
-  , getAssets    :: Path -> IO (Item [AssetAddress.AssetAddress])
-  , getBlock     :: Path -> IO (Item Block.Block)
-  , getBlocks    :: Path -> IO (Item [Block.Block])
-  , getPeers     :: Path -> IO (Item [Peer.Peer])
-  , createAsset  :: CreateAsset -> IO (Item ())
-  , getContracts :: Path -> IO (Item [Contract.Contract])
+  { config        :: Config.Config
+  , getAccounts   :: Path -> IO (Item [Account.Account])
+  , getAsset      :: Path -> IO (Item Asset.Asset)
+  , getAssets     :: Path -> IO (Item [AssetAddress.AssetAddress])
+  , getBlock      :: Path -> IO (Item Block.Block)
+  , getBlocks     :: Path -> IO (Item [Block.Block])
+  , getPeers      :: Path -> IO (Item [Peer.Peer])
+  , getValidators :: Path -> IO (Item [Peer.Peer])
+  , createAsset   :: CreateAsset -> IO (Item ())
+  , getContracts  :: Path -> IO (Item [Contract.Contract])
   }
 
 uplinkAccounts :: Handle -> IO (Item [Account.Account])
@@ -101,3 +103,6 @@ uplinkContracts = (`getContracts` mkPath "contracts")
 
 uplinkPeers :: Handle -> IO (Item [Peer.Peer])
 uplinkPeers = (`getPeers` mkPath "peers")
+
+uplinkValidators :: Handle -> IO (Item [Peer.Peer])
+uplinkValidators = (`getValidators` mkPath "peers/validators")

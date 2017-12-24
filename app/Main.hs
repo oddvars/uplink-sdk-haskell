@@ -38,4 +38,4 @@ runExample cfg = do
 
   --U.withHandle cfg (`U.uplinkAsset` assetId) >>= print
 
-  U.withHandle cfg U.uplinkPeers >>= print
+  U.withHandle cfg U.uplinkValidators >>= print

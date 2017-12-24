@@ -34,15 +34,16 @@ instance ToJSON Cmd where
 
 withHandle :: Cfg.Config -> (U.Handle -> IO (U.Item a)) -> IO (U.Item a)
 withHandle cfg f = f U.Handle
-  { U.config       = cfg
-  , U.getAccounts  = getAccounts cfg
-  , U.getAsset     = getAsset cfg
-  , U.getAssets    = getAssets cfg
-  , U.getBlock     = getBlock cfg
-  , U.getBlocks    = getBlocks cfg
-  , U.getContracts = getContracts cfg
-  , U.getPeers     = getPeers cfg
-  , U.createAsset  = createAsset cfg
+  { U.config        = cfg
+  , U.getAccounts   = getAccounts cfg
+  , U.getAsset      = getAsset cfg
+  , U.getAssets     = getAssets cfg
+  , U.getBlock      = getBlock cfg
+  , U.getBlocks     = getBlocks cfg
+  , U.getContracts  = getContracts cfg
+  , U.getPeers      = getPeers cfg
+  , U.getValidators = getValidators cfg
+  , U.createAsset   = createAsset cfg
   }
 
 getAccounts :: Cfg.Config -> U.Path -> IO (U.Item [U.Account])
@@ -74,6 +75,9 @@ getContracts cfg = post' cfg Nothing
 
 getPeers :: Cfg.Config -> U.Path -> IO (U.Item [U.Peer])
 getPeers cfg = post' cfg Nothing
+
+getValidators :: Cfg.Config -> U.Path -> IO (U.Item [U.Peer])
+getValidators cfg = post' cfg Nothing
 
 post' :: FromJSON a => Cfg.Config -> Maybe Cmd -> U.Path -> IO (U.Item a)
 post' cfg mcmd p = do

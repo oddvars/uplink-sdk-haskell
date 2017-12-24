@@ -1,7 +1,4 @@
 {-
-    def uplink_validators(self):
-        result = self._call('GET', endpoint='peers/validators')
-
     def uplink_transactions(self, block_id=0):
         transactions_by_id = 'transactions/{}'.format(block_id)
 
