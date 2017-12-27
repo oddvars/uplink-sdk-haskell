@@ -15,37 +15,33 @@ import           Network.HTTP.Types
 
 
 import qualified Asset
+import qualified Derivation as D
 import qualified Key
 import qualified RPC
 import qualified Time
 import qualified Uplink.Client as U
 import qualified Uplink.Client.Config as Cfg
+import qualified Uplink.Client.Version as Version
 import qualified Transaction as Tx
-
-data Cmd = Cmd
-  { params :: Tx.Transaction
-  , method' :: T.Text
-  } deriving (Show)
-
-instance ToJSON Cmd where
-  toJSON cmd = object [ "params" .= toJSON (params cmd)
-                      , "method" .= method' cmd
-                      ]
+import qualified SafeString
 
 withHandle :: Cfg.Config -> (U.Handle -> IO (U.Item a)) -> IO (U.Item a)
 withHandle cfg f = f U.Handle
-  { U.config        = cfg
-  , U.getAccount    = getAccount cfg
-  , U.getAccounts   = getAccounts cfg
-  , U.getAsset      = getAsset cfg
-  , U.getAssets     = getAssets cfg
-  , U.getBlock      = getBlock cfg
-  , U.getBlocks     = getBlocks cfg
-  , U.getContract   = getContract cfg
-  , U.getContracts  = getContracts cfg
-  , U.getPeers      = getPeers cfg
-  , U.getValidators = getValidators cfg
-  , U.createAsset   = createAsset cfg
+  { U.config          = cfg
+  , U.getAccount      = getAccount cfg
+  , U.getAccounts     = getAccounts cfg
+  , U.createAccount   = createAccount cfg
+  , U.getAsset        = getAsset cfg
+  , U.getAssets       = getAssets cfg
+  , U.createAsset     = createAsset cfg
+  , U.getBlock        = getBlock cfg
+  , U.getBlocks       = getBlocks cfg
+  , U.getContract     = getContract cfg
+  , U.getContracts    = getContracts cfg
+  , U.getPeers        = getPeers cfg
+  , U.getTransactions = getTransactions cfg
+  , U.getValidators   = getValidators cfg
+  , U.getVersion      = getVersion cfg
   }
 
 getAccount :: Cfg.Config -> U.Path -> IO (U.Item U.Account)
@@ -54,14 +50,28 @@ getAccount = flip post' Nothing
 getAccounts :: Cfg.Config -> U.Path -> IO (U.Item [U.Account])
 getAccounts = flip post' Nothing
 
-createAsset :: Cfg.Config -> U.CreateAsset -> IO (U.Item ())
-createAsset cfg@(Cfg.Config priv orig _) (U.CreateAsset addr name qty) = do
-  let header = Tx.TxAsset (Tx.CreateAsset addr name qty (Just Asset.USD) Asset.Discrete)
+createAccount :: Cfg.Config -> Maybe U.Cmd -> IO (U.Item ())
+createAccount cfg createAcct = do
+  -- let header = Tx.TxAccount createAcct
 
+  -- ts <- Time.now
+  -- sig <- Key.sign (Cfg.privateKey cfg) $ S.encode header
+
+  -- print (Key.decodeSig (Key.encodeSig sig))
+
+  --post' cfg (Just (Cmd (Tx.Transaction header (Key.encodeSig sig) (Cfg.originAddress cfg) ts) "Transaction")) root
+  post' cfg createAcct root
+
+createAsset :: Cfg.Config -> Tx.TxAsset-> IO (U.Item ())
+createAsset cfg txAsset@(Tx.CreateAsset _ name supply mRef atyp) = do
   ts <- Time.now
-  sig <- Key.sign priv $ S.encode header
 
-  post' cfg (Just (Cmd (Tx.Transaction header (Key.encodeSig sig) orig ts) "Transaction")) (U.mkPath "")
+  let derivedAddress = D.addrAsset (SafeString.toBytes name) (Cfg.originAddress cfg) supply mRef atyp ts
+      header = Tx.TxAsset txAsset { Tx.assetAddr = derivedAddress }
+
+  sig <- Key.sign (U.privateKey cfg) $ S.encode header
+
+  post' cfg (Just (U.Cmd (Tx.Transaction header (Key.encodeSig sig) (U.originAddress cfg) ts) "Transaction")) root
 
 getAssets :: Cfg.Config -> U.Path -> IO (U.Item [U.AssetAddress])
 getAssets = flip post' Nothing
@@ -84,10 +94,16 @@ getContracts = flip post' Nothing
 getPeers :: Cfg.Config -> U.Path -> IO (U.Item [U.Peer])
 getPeers = flip post' Nothing
 
+getTransactions :: Cfg.Config -> U.Path -> IO (U.Item [U.Transaction])
+getTransactions = flip post' Nothing
+
 getValidators :: Cfg.Config -> U.Path -> IO (U.Item [U.Peer])
 getValidators = flip post' Nothing
 
-post' :: FromJSON a => Cfg.Config -> Maybe Cmd -> U.Path -> IO (U.Item a)
+getVersion :: Cfg.Config -> U.Path -> IO (U.Item Version.Version)
+getVersion = flip post' Nothing
+
+post' :: FromJSON a => Cfg.Config -> Maybe U.Cmd -> U.Path -> IO (U.Item a)
 post' cfg mcmd p = do
   man <- newManager defaultManagerSettings
   initReq <- parseRequest (Cfg.host cfg)
@@ -96,6 +112,7 @@ post' cfg mcmd p = do
             else
               initReq { method = "POST", path = U.unpath p }
   res <- httpLbs req man
+  print res
   return $ handleResult res
 
 handleResult :: FromJSON a => Response BSL.ByteString -> U.Item a
@@ -115,3 +132,6 @@ parse (Right a)                    = mapLeft T.pack (eitherDecode (encode a))
 mapLeft :: (a -> b) -> Either a c -> Either b c
 mapLeft f (Left a)  = Left (f a)
 mapLeft _ (Right b) = Right b
+
+root :: U.Path
+root = U.mkPath ""

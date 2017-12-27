@@ -1,7 +1,4 @@
 {-
-    def uplink_transactions(self, block_id=0):
-        transactions_by_id = 'transactions/{}'.format(block_id)
-
     def uplink_version(self):
         return self._call('GET', endpoint='version')
 
@@ -30,68 +27,6 @@
             "method": "ResetMemPools",
             "params": {}
         }
-
-    def uplink_create_account(self, private_key, public_key,
-                              from_address=None, metadata=None, timezone=None):
-        if timezone is None:
-            timezone, localtz = time.tzname
-
-        timestamp = get_time()
-
-        pubkey = public_key.to_string()
-        public_key_hex = codecs.encode(pubkey, 'hex')
-
-        acc_address = derive_account_address(public_key)
-
-        hdr = CreateAccountHeader(
-            public_key_hex, metadata, acc_address, timezone)
-        txb = TxAccount(CreateAccount(hdr))
-
-        r, s = hdr.sign(private_key)
-        signature = pack_signature(r, s)
-
-        origin = acc_address if from_address is None else from_address
-        tx = Transaction(txb, signature, timestamp,
-                         origin=origin)
-
-        params = tx.to_dict()
-
-        result = self._call('Transaction', params=params, endpoint='')
-
-        if self._handle_success(result):
-            return Account(timezone, public_key, metadata, acc_address)
-        else:
-            raise UplinkJsonRpcError("Malformed CreateAccount", result)
-
-    def uplink_create_asset(self, private_key, origin, name,
-                            supply, asset_type_nm, reference, issuer,
-                            precision=None):
-        """Create Asset - returns (result, to_address)"""
-        timestamp = get_time()
-
-        hdr = CreateAssetHeader(name, supply, asset_type_nm,
-                                reference, issuer, precision, timestamp)
-        txb = TxAsset(CreateAsset(hdr))
-
-        r, s = hdr.sign(private_key)
-        signature = pack_signature(r, s)
-
-        tx = Transaction(txb, signature, timestamp, origin=origin)
-        params = tx.to_dict()
-
-        print(params)
-
-        result = self._call('Transaction', params=params, endpoint='')
-
-        asset_type = AssetType(asset_type_nm, precision)
-        asset_addr = derive_asset_address(name, issuer, supply, reference,
-                                          asset_type, timestamp)
-
-        if self._handle_success(result):
-            return (result, asset_addr)
-        else:
-            print(result)
-            raise UplinkJsonRpcError("Malformed CreateAsset", result)
 
     def uplink_transfer_asset(self, private_key, from_address, to_address, balance, asset_address):
         timestamp = get_time()

@@ -4,55 +4,80 @@ module Uplink.Client
   ( Handle (..)
 
   , Account.Account (..)
---  , Asset.Asset (..)
+  , Account.Metadata (..)
   , AssetAddress.AssetAddress (..)
   , Block.Block (..)
-  , CreateAsset (..)
+  , Cmd (..)
   , Contract.Contract (..)
   , Config.Config (..)
   , Item
   , Path
   , Peer.Peer
+  , Transaction.Transaction (..)
+  , Tx.TxAccount (..)
+  , Tx.TxAsset (..)
 
   , mkAddress
   , mkPath
   , mkPathWithId
   , mkSafeString
 
+  , pubToBS
+
   , unpath
   , uplinkAccount
   , uplinkAccounts
+  , uplinkCreateAccount
   , uplinkBlock
   , uplinkBlocks
   , uplinkAsset
   , uplinkAssets
+  , uplinkCreateAsset
   , uplinkContract
   , uplinkContracts
   , uplinkPeers
+  , uplinkTransactions
   , uplinkValidators
+--  , uplinkVersion
 
   ) where
 
+import           Data.Aeson
 import qualified Data.ByteString as BS
-import           Data.Int
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
+import qualified Data.Serialize as S
 
 import qualified Address
---import qualified Account
---import qualified Block
+import qualified Account
 import qualified Asset
+import qualified Key
 import qualified SafeString
-import qualified Uplink.Client.Account as Account
+import qualified Time
+import qualified Transaction as Tx
 import qualified Uplink.Client.AssetAddress as AssetAddress
 import qualified Uplink.Client.Block as Block
 import qualified Uplink.Client.Contract as Contract
 import qualified Uplink.Client.Config as Config
 import qualified Uplink.Client.Peer as Peer
+import qualified Uplink.Client.Version as Version
+import qualified Uplink.Client.Transaction as Transaction
 
 type Item a = Either T.Text a
 
 data Path = Path { unpath :: BS.ByteString }
+
+data Cmd = Cmd
+  { params :: Tx.Transaction
+  , method' :: T.Text
+  } deriving (Show)
+
+instance ToJSON Cmd where
+  toJSON cmd = object [ "params" .= toJSON (params cmd)
+                      , "method" .= method' cmd
+                      ]
+
+
 
 mkPath :: String -> Path
 mkPath = Path <$> T.encodeUtf8 . T.pack
@@ -60,31 +85,28 @@ mkPath = Path <$> T.encodeUtf8 . T.pack
 mkPathWithId :: String -> String -> Path
 mkPathWithId path identifier = Path <$> T.encodeUtf8 . T.pack $ path ++ "/" ++ identifier
 
-data CreateAsset = CreateAsset
-  { assetAddress :: Address.Address
-  , assetName    :: SafeString.SafeString
-  , assetQuantity :: Int64
-  }
-
 mkAddress :: IO Address.Address
 mkAddress = Address.newAddr
 
-mkSafeString :: T.Text -> SafeString.SafeString
-mkSafeString = SafeString.fromBytes' . T.encodeUtf8
+mkSafeString :: String -> SafeString.SafeString
+mkSafeString = SafeString.fromBytes' . T.encodeUtf8 . T.pack
 
 data Handle = Handle
-  { config        :: Config.Config
-  , createAsset   :: CreateAsset -> IO (Item ())
-  , getAccount    :: Path -> IO (Item Account.Account)
-  , getAccounts   :: Path -> IO (Item [Account.Account])
-  , getAsset      :: Path -> IO (Item Asset.Asset)
-  , getAssets     :: Path -> IO (Item [AssetAddress.AssetAddress])
-  , getBlock      :: Path -> IO (Item Block.Block)
-  , getBlocks     :: Path -> IO (Item [Block.Block])
-  , getPeers      :: Path -> IO (Item [Peer.Peer])
-  , getValidators :: Path -> IO (Item [Peer.Peer])
-  , getContract   :: Path -> IO (Item Contract.Contract)
-  , getContracts  :: Path -> IO (Item [Contract.Contract])
+  { config          :: Config.Config
+  , createAsset     :: Tx.TxAsset -> IO (Item ())
+  , createAccount   :: Maybe Cmd -> IO (Item ())
+  , getAccount      :: Path -> IO (Item Account.Account)
+  , getAccounts     :: Path -> IO (Item [Account.Account])
+  , getAsset        :: Path -> IO (Item Asset.Asset)
+  , getAssets       :: Path -> IO (Item [AssetAddress.AssetAddress])
+  , getBlock        :: Path -> IO (Item Block.Block)
+  , getBlocks       :: Path -> IO (Item [Block.Block])
+  , getPeers        :: Path -> IO (Item [Peer.Peer])
+  , getValidators   :: Path -> IO (Item [Peer.Peer])
+  , getContract     :: Path -> IO (Item Contract.Contract)
+  , getContracts    :: Path -> IO (Item [Contract.Contract])
+  , getTransactions :: Path -> IO (Item [Transaction.Transaction])
+  , getVersion      :: Path -> IO (Item Version.Version)
   }
 
 uplinkAccount :: Handle -> String -> IO (Item Account.Account)
@@ -92,6 +114,30 @@ uplinkAccount h accountId = getAccount h $ mkPathWithId "/accounts" accountId
 
 uplinkAccounts :: Handle -> IO (Item [Account.Account])
 uplinkAccounts = (`getAccounts` mkPath "accounts")
+
+uplinkCreateAccount
+  :: Handle
+  -> BS.ByteString     -- timezone
+  -> Account.Metadata
+  -> IO (Item ())
+uplinkCreateAccount h tz md = do
+  (priv, pub, addr) <- Address.newTriple
+  ts <- Time.now
+  sig <- Key.sign priv $ S.encode (header pub)
+
+  createAccount h (pure (trans (header pub) sig addr ts))
+
+  where
+    header :: Key.PubKey -> Tx.TransactionHeader
+    header pubKey = Tx.TxAccount Tx.CreateAccount { Tx.pubKey = pubToBS pubKey
+                                                  , Tx.timezone = tz
+                                                  , Tx.metadata = md }
+
+    trans :: Tx.TransactionHeader -> Key.Signature -> Address.Address -> Time.Timestamp -> Cmd
+    trans hdr sig addr' ts' = Cmd (Tx.Transaction hdr (Key.encodeSig sig) addr' ts') "Transaction"
+
+uplinkCreateAsset :: Handle -> Tx.TxAsset -> IO (Item ())
+uplinkCreateAsset = createAsset
 
 uplinkAsset :: Handle -> String -> IO (Item Asset.Asset)
 uplinkAsset h assetId = getAsset h $ mkPathWithId "/assets" assetId
@@ -116,3 +162,12 @@ uplinkPeers = (`getPeers` mkPath "peers")
 
 uplinkValidators :: Handle -> IO (Item [Peer.Peer])
 uplinkValidators = (`getValidators` mkPath "peers/validators")
+
+uplinkTransactions :: Handle -> String -> IO (Item [Transaction.Transaction])
+uplinkTransactions h blockId = getTransactions h $ mkPathWithId "/transactions" blockId
+
+pubToBS :: Key.PubKey -> BS.ByteString
+pubToBS = Key.unHexPub . Key.hexPub
+
+privToBS :: Key.PrivateKey -> BS.ByteString
+privToBS = Key.unHexPriv . Key.hexPriv

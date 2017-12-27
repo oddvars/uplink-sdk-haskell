@@ -1,7 +1,10 @@
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE DeriveGeneric     #-}
 module Uplink.Client.Contract where
 
 import Data.Aeson
+import Data.Aeson.Types (typeMismatch)
 import qualified Data.Text as T
 import GHC.Generics
 
@@ -10,13 +13,23 @@ import qualified Time
 
 
 data Contract = Contract
-  { script    :: T.Text
-  , state     :: T.Text
-  , address   :: Address.Address
-  , owner     :: Address.Address
-  , timestamp :: Time.Timestamp
-  , storage   :: Object -- todo: storage
+  { script            :: T.Text
+  , state             :: T.Text
+  , contractAddress   :: Address.Address
+  , owner             :: Address.Address
+  , timestamp         :: Time.Timestamp
+  , storage           :: Object -- todo: storage
   }
   deriving (Show, Generic)
 
-instance FromJSON Contract
+instance FromJSON Contract where
+  parseJSON (Object v) = do
+    script          <- v .: "script"
+    state           <- v .: "state"
+    contractAddress <- v .: "address"
+    owner           <- v .: "owner"
+    timestamp       <- v .: "timestamp"
+    storage         <- v .: "storage"
+    pure Contract{..}
+
+  parseJSON invalid  = typeMismatch "Contract" invalid

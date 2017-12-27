@@ -1,11 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
+import qualified Asset
 import qualified Account
 import qualified Address
 import           Data.Aeson
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
+import qualified Data.Map as Map
 import qualified Key
 import qualified Uplink as U
 
@@ -23,14 +25,30 @@ main = do
     (Right privKey) -> do
       let cfg = U.Config privKey (origin account) "http://127.0.0.1:8545"
 
-      runExample cfg
+      accountEx cfg
+      --contractEx cfg
+      assetEx cfg
 
   where origin :: Maybe Account.Account -> Address.Address
-        origin Nothing =   Address.parseAddress ""
-        origin (Just a)  = Account.address a
+        origin Nothing  = Address.parseAddress "" -- fix
+        origin (Just a) = Account.address a
 
+accountEx :: U.Config -> IO ()
+accountEx cfg = do
+  U.withHandle cfg (\h -> U.uplinkCreateAccount h "GMT" meta) >>= print
+  where meta = U.Metadata (Map.fromList[("name", "Haskell")])
 
-runExample :: U.Config ->  IO ()
-runExample cfg = do
+assetEx :: U.Config -> IO ()
+assetEx cfg = do
+  newAddr <- U.mkAddress
+  --U.withHandle cfg U.uplinkAssets >>= print
+  U.withHandle cfg (`U.uplinkCreateAsset` U.CreateAsset newAddr (U.mkSafeString "haskell asset") 100 (Just Asset.USD) Asset.Discrete) >>= print
+
+blocksEx :: U.Config -> IO ()
+blocksEx cfg = do
+  U.withHandle cfg (`U.uplinkTransactions` "1") >>= print
+
+contractEx :: U.Config ->  IO ()
+contractEx cfg = do
   U.withHandle cfg U.uplinkContracts >>= print
   U.withHandle cfg (`U.uplinkContract` "5iPNiNwhnyYxQ1Qn496csxKVsiDs12nq1XCY5DVZeTgM") >>= print
