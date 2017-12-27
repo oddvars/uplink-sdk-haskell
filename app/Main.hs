@@ -35,20 +35,20 @@ main = do
 
 accountEx :: U.Config -> IO ()
 accountEx cfg = do
-  U.withHandle cfg (\h -> U.uplinkCreateAccount h "GMT" meta) >>= print
+  U.withHTTPClient cfg (\h -> U.uplinkCreateAccount h "GMT" meta) >>= print
   where meta = U.Metadata (Map.fromList[("name", "Haskell")])
 
 assetEx :: U.Config -> IO ()
 assetEx cfg = do
   newAddr <- U.mkAddress
-  --U.withHandle cfg U.uplinkAssets >>= print
-  U.withHandle cfg (`U.uplinkCreateAsset` U.CreateAsset newAddr (U.mkSafeString "haskell asset") 100 (Just Asset.USD) Asset.Discrete) >>= print
+  --U.withHTTPClient cfg U.uplinkAssets >>= print
+  U.withHTTPClient cfg (`U.uplinkCreateAsset` U.CreateAsset newAddr (U.mkSafeString "haskell asset") 100 (Just Asset.USD) Asset.Discrete) >>= print
 
 blocksEx :: U.Config -> IO ()
 blocksEx cfg = do
-  U.withHandle cfg (`U.uplinkTransactions` "1") >>= print
+  U.withHTTPClient cfg (`U.uplinkTransactions` "1") >>= print
 
 contractEx :: U.Config ->  IO ()
 contractEx cfg = do
-  U.withHandle cfg U.uplinkContracts >>= print
-  U.withHandle cfg (`U.uplinkContract` "5iPNiNwhnyYxQ1Qn496csxKVsiDs12nq1XCY5DVZeTgM") >>= print
+  U.withHTTPClient cfg U.uplinkContracts >>= print
+  U.withHTTPClient cfg (`U.uplinkContract` "5iPNiNwhnyYxQ1Qn496csxKVsiDs12nq1XCY5DVZeTgM") >>= print

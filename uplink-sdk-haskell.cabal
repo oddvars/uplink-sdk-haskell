@@ -24,7 +24,7 @@ library
                        Uplink.Client.Config
                        Uplink.Client.Contract
                        Uplink.Client.Peer
-                       Uplink.Client.REST
+                       Uplink.Client.HTTPClient
                        Uplink.Client.Transaction
                        Uplink.Client.Version
   build-depends:       base >= 4.7 && < 5

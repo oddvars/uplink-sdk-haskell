@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Uplink.Client.REST
-  ( withHandle
+module Uplink.Client.HTTPClient
+  ( withHTTPClient
   )
   where
 
@@ -25,8 +25,8 @@ import qualified Uplink.Client.Version as Version
 import qualified Transaction as Tx
 import qualified SafeString
 
-withHandle :: Cfg.Config -> (U.Handle -> IO (U.Item a)) -> IO (U.Item a)
-withHandle cfg f = f U.Handle
+withHTTPClient :: Cfg.Config -> (U.Handle -> IO (U.Item a)) -> IO (U.Item a)
+withHTTPClient cfg f = f U.Handle
   { U.config          = cfg
   , U.getAccount      = getAccount cfg
   , U.getAccounts     = getAccounts cfg
