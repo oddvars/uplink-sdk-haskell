@@ -7,7 +7,6 @@ module Uplink.Client.HTTPClient
 import           Data.Aeson
 import           Data.Maybe
 import qualified Data.ByteString.Lazy as BSL
-import qualified Data.Serialize as S
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import           Network.HTTP.Client
@@ -15,15 +14,10 @@ import           Network.HTTP.Types
 
 
 import qualified Asset
-import qualified Derivation as D
-import qualified Key
 import qualified RPC
-import qualified Time
 import qualified Uplink.Client as U
 import qualified Uplink.Client.Config as Cfg
 import qualified Uplink.Client.Version as Version
-import qualified Transaction as Tx
-import qualified SafeString
 
 withHTTPClient :: Cfg.Config -> (U.Handle -> IO (U.Item a)) -> IO (U.Item a)
 withHTTPClient cfg f = f U.Handle
@@ -51,27 +45,10 @@ getAccounts :: Cfg.Config -> U.Path -> IO (U.Item [U.Account])
 getAccounts = flip post' Nothing
 
 createAccount :: Cfg.Config -> Maybe U.Cmd -> IO (U.Item ())
-createAccount cfg createAcct = do
-  -- let header = Tx.TxAccount createAcct
+createAccount cfg createAcct = post' cfg createAcct root
 
-  -- ts <- Time.now
-  -- sig <- Key.sign (Cfg.privateKey cfg) $ S.encode header
-
-  -- print (Key.decodeSig (Key.encodeSig sig))
-
-  --post' cfg (Just (Cmd (Tx.Transaction header (Key.encodeSig sig) (Cfg.originAddress cfg) ts) "Transaction")) root
-  post' cfg createAcct root
-
-createAsset :: Cfg.Config -> Tx.TxAsset-> IO (U.Item ())
-createAsset cfg txAsset@(Tx.CreateAsset _ name supply mRef atyp) = do
-  ts <- Time.now
-
-  let derivedAddress = D.addrAsset (SafeString.toBytes name) (Cfg.originAddress cfg) supply mRef atyp ts
-      header = Tx.TxAsset txAsset { Tx.assetAddr = derivedAddress }
-
-  sig <- Key.sign (U.privateKey cfg) $ S.encode header
-
-  post' cfg (Just (U.Cmd (Tx.Transaction header (Key.encodeSig sig) (U.originAddress cfg) ts) "Transaction")) root
+createAsset :: Cfg.Config -> Maybe U.Cmd -> IO (U.Item ())
+createAsset cfg mCmd = post' cfg mCmd root
 
 getAssets :: Cfg.Config -> U.Path -> IO (U.Item [U.AssetAddress])
 getAssets = flip post' Nothing
@@ -120,18 +97,16 @@ handleResult res =
     if responseStatus res == status200 then
       parse . eitherDecode . responseBody $ res
     else
-      Left (T.decodeUtf8 . statusMessage . responseStatus $ res) :: U.Item a
-
+      Left (T.decodeUtf8 . statusMessage . responseStatus $ res)
 
 parse :: FromJSON a => Either String RPC.RPCResponse -> U.Item a
 parse (Left e)                     = Left (T.pack e)
 parse (Right (RPC.RPCRespError e)) = Left (T.pack . show $ e)
-parse (Right (RPC.RPCResp a))      = mapLeft T.pack (eitherDecode (encode a))
-parse (Right a)                    = mapLeft T.pack (eitherDecode (encode a))
-
-mapLeft :: (a -> b) -> Either a c -> Either b c
-mapLeft f (Left a)  = Left (f a)
-mapLeft _ (Right b) = Right b
+parse (Right (RPC.RPCResp a))      =
+  case fromJSON a of
+    Success res -> Right res
+    Error s     -> Left $ T.pack s
+parse (Right RPC.RPCRespOK)        = Left "ok"
 
 root :: U.Path
 root = U.mkPath ""

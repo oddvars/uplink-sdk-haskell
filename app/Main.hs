@@ -25,7 +25,7 @@ main = do
     (Right privKey) -> do
       let cfg = U.Config privKey (origin account) "http://127.0.0.1:8545"
 
-      accountEx cfg
+      --accountEx cfg
       --contractEx cfg
       assetEx cfg
 
@@ -40,9 +40,8 @@ accountEx cfg = do
 
 assetEx :: U.Config -> IO ()
 assetEx cfg = do
-  newAddr <- U.mkAddress
   --U.withHTTPClient cfg U.uplinkAssets >>= print
-  U.withHTTPClient cfg (`U.uplinkCreateAsset` U.CreateAsset newAddr (U.mkSafeString "haskell asset") 100 (Just Asset.USD) Asset.Discrete) >>= print
+  U.withHTTPClient cfg (\h -> U.uplinkCreateAsset h "haskell asset" 100 (Just Asset.USD) Asset.Discrete) >>= print
 
 blocksEx :: U.Config -> IO ()
 blocksEx cfg = do

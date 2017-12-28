@@ -44,6 +44,7 @@ module Uplink.Client
 
 import           Data.Aeson
 import qualified Data.ByteString as BS
+import           Data.Int
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Data.Serialize as S
@@ -51,6 +52,7 @@ import qualified Data.Serialize as S
 import qualified Address
 import qualified Account
 import qualified Asset
+import qualified Derivation as D
 import qualified Key
 import qualified SafeString
 import qualified Time
@@ -93,7 +95,7 @@ mkSafeString = SafeString.fromBytes' . T.encodeUtf8 . T.pack
 
 data Handle = Handle
   { config          :: Config.Config
-  , createAsset     :: Tx.TxAsset -> IO (Item ())
+  , createAsset     :: Maybe Cmd -> IO (Item ())
   , createAccount   :: Maybe Cmd -> IO (Item ())
   , getAccount      :: Path -> IO (Item Account.Account)
   , getAccounts     :: Path -> IO (Item [Account.Account])
@@ -125,7 +127,7 @@ uplinkCreateAccount h tz md = do
   ts <- Time.now
   sig <- Key.sign priv $ S.encode (header pub)
 
-  createAccount h (pure (trans (header pub) sig addr ts))
+  createAccount h (pure (mkTrans (header pub) sig addr ts))
 
   where
     header :: Key.PubKey -> Tx.TransactionHeader
@@ -133,11 +135,28 @@ uplinkCreateAccount h tz md = do
                                                   , Tx.timezone = tz
                                                   , Tx.metadata = md }
 
-    trans :: Tx.TransactionHeader -> Key.Signature -> Address.Address -> Time.Timestamp -> Cmd
-    trans hdr sig addr' ts' = Cmd (Tx.Transaction hdr (Key.encodeSig sig) addr' ts') "Transaction"
+mkTrans :: Tx.TransactionHeader -> Key.Signature -> Address.Address -> Time.Timestamp -> Cmd
+mkTrans hdr sig addr' ts' = Cmd (Tx.Transaction hdr (Key.encodeSig sig) addr' ts') "Transaction"
 
-uplinkCreateAsset :: Handle -> Tx.TxAsset -> IO (Item ())
-uplinkCreateAsset = createAsset
+uplinkCreateAsset
+  :: Handle
+  -> BS.ByteString    -- name
+  -> Int64            -- supply
+  -> Maybe Asset.Ref
+  -> Asset.AssetType
+  -> IO (Item ())
+uplinkCreateAsset h n supply mRef atyp = do
+  ts <- Time.now
+  let cfg     = config h
+      origin  = Config.originAddress cfg
+      da      = D.addrAsset n origin supply mRef atyp ts
+      name'   = SafeString.fromBytes' n
+      txAsset = Tx.CreateAsset da name' supply mRef atyp
+      header' = Tx.TxAsset txAsset
+
+  sig <- Key.sign (Config.privateKey cfg) $ S.encode header'
+
+  createAsset h (pure (mkTrans header' sig origin ts))
 
 uplinkAsset :: Handle -> String -> IO (Item Asset.Asset)
 uplinkAsset h assetId = getAsset h $ mkPathWithId "/assets" assetId
@@ -168,6 +187,3 @@ uplinkTransactions h blockId = getTransactions h $ mkPathWithId "/transactions" 
 
 pubToBS :: Key.PubKey -> BS.ByteString
 pubToBS = Key.unHexPub . Key.hexPub
-
-privToBS :: Key.PrivateKey -> BS.ByteString
-privToBS = Key.unHexPriv . Key.hexPriv
