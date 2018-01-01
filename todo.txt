@@ -5,9 +5,6 @@
     def uplink_get_contract_callable(self, address):
         contract_by_address = 'contracts/{}/callable'.format(address)
 
-    def uplink_get_invalid_transactions(self):
-        result = self._call('GET', endpoint='transactions/invalid')
-
     def uplink_get_mempool(self):
         result = self._call('GET', endpoint='transactions/pool')
 

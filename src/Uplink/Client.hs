@@ -37,6 +37,7 @@ module Uplink.Client
   , uplinkContracts
   , uplinkPeers
   , uplinkTransactions
+  , uplinkInvalidTransactions
   , uplinkValidators
 --  , uplinkVersion
 
@@ -108,6 +109,7 @@ data Handle = Handle
   , getContract     :: Path -> IO (Item Contract.Contract)
   , getContracts    :: Path -> IO (Item [Contract.Contract])
   , getTransactions :: Path -> IO (Item [Transaction.Transaction])
+  , getInvalidTransactions :: Path -> IO (Item [Transaction.Transaction])
   , getVersion      :: Path -> IO (Item Version.Version)
   }
 
@@ -184,6 +186,9 @@ uplinkValidators = (`getValidators` mkPath "peers/validators")
 
 uplinkTransactions :: Handle -> String -> IO (Item [Transaction.Transaction])
 uplinkTransactions h blockId = getTransactions h $ mkPathWithId "/transactions" blockId
+
+uplinkInvalidTransactions :: Handle -> IO (Item [Transaction.Transaction])
+uplinkInvalidTransactions = (`getTransactions` mkPath "/transactions/invalid")
 
 pubToBS :: Key.PubKey -> BS.ByteString
 pubToBS = Key.unHexPub . Key.hexPub

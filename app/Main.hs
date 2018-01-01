@@ -27,7 +27,8 @@ main = do
 
       --accountEx cfg
       --contractEx cfg
-      assetEx cfg
+      --assetEx cfg
+      transactionsEx cfg
 
   where origin :: Maybe Account.Account -> Address.Address
         origin Nothing  = Address.parseAddress "" -- fix
@@ -51,3 +52,7 @@ contractEx :: U.Config ->  IO ()
 contractEx cfg = do
   U.withHTTPClient cfg U.uplinkContracts >>= print
   U.withHTTPClient cfg (`U.uplinkContract` "5iPNiNwhnyYxQ1Qn496csxKVsiDs12nq1XCY5DVZeTgM") >>= print
+
+transactionsEx :: U.Config -> IO ()
+transactionsEx cfg = do
+  U.withHTTPClient cfg U.uplinkInvalidTransactions >>= print

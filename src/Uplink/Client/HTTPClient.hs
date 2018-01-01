@@ -34,6 +34,7 @@ withHTTPClient cfg f = f U.Handle
   , U.getContracts    = getContracts cfg
   , U.getPeers        = getPeers cfg
   , U.getTransactions = getTransactions cfg
+  , U.getInvalidTransactions = getInvalidTransactions cfg
   , U.getValidators   = getValidators cfg
   , U.getVersion      = getVersion cfg
   }
@@ -73,6 +74,9 @@ getPeers = flip post' Nothing
 
 getTransactions :: Cfg.Config -> U.Path -> IO (U.Item [U.Transaction])
 getTransactions = flip post' Nothing
+
+getInvalidTransactions :: Cfg.Config -> U.Path -> IO (U.Item [U.Transaction])
+getInvalidTransactions = flip post' Nothing
 
 getValidators :: Cfg.Config -> U.Path -> IO (U.Item [U.Peer])
 getValidators = flip post' Nothing
