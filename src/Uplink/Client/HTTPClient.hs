@@ -32,6 +32,7 @@ withHTTPClient cfg f = f U.Handle
   , U.getBlocks       = getBlocks cfg
   , U.getContract     = getContract cfg
   , U.getContracts    = getContracts cfg
+  , U.getMempool      = getMemPool cfg
   , U.getPeers        = getPeers cfg
   , U.getTransactions = getTransactions cfg
   , U.getInvalidTransactions = getInvalidTransactions cfg
@@ -69,13 +70,16 @@ getContract = flip post' Nothing
 getContracts :: Cfg.Config -> U.Path -> IO (U.Item [U.Contract])
 getContracts = flip post' Nothing
 
+getMemPool :: Cfg.Config -> U.Path -> IO (U.Item U.Mempool)
+getMemPool = flip post' Nothing
+
 getPeers :: Cfg.Config -> U.Path -> IO (U.Item [U.Peer])
 getPeers = flip post' Nothing
 
 getTransactions :: Cfg.Config -> U.Path -> IO (U.Item [U.Transaction])
 getTransactions = flip post' Nothing
 
-getInvalidTransactions :: Cfg.Config -> U.Path -> IO (U.Item [U.Transaction])
+getInvalidTransactions :: Cfg.Config -> U.Path -> IO (U.Item [U.InvalidTransaction])
 getInvalidTransactions = flip post' Nothing
 
 getValidators :: Cfg.Config -> U.Path -> IO (U.Item [U.Peer])
@@ -93,7 +97,7 @@ post' cfg mcmd p = do
             else
               initReq { method = "POST", path = U.unpath p }
   res <- httpLbs req man
-  print res
+  --print res
   return $ handleResult res
 
 handleResult :: FromJSON a => Response BSL.ByteString -> U.Item a

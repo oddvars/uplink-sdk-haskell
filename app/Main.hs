@@ -56,3 +56,4 @@ contractEx cfg = do
 transactionsEx :: U.Config -> IO ()
 transactionsEx cfg = do
   U.withHTTPClient cfg U.uplinkInvalidTransactions >>= print
+  U.withHTTPClient cfg U.uplinkMemPool >>= print

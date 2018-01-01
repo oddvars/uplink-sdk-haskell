@@ -13,3 +13,9 @@ data Transaction = Transaction
   } deriving (Show, Generic)
 
 instance FromJSON Transaction
+
+data InvalidTransaction = InvalidTransaction
+  { transaction :: Transaction
+  } deriving (Show, Generic)
+
+instance FromJSON InvalidTransaction

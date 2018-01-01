@@ -11,15 +11,18 @@ module Uplink.Client
   , Contract.Contract (..)
   , Config.Config (..)
   , Item
+  , Mempool.Mempool (..)
   , Path
   , Peer.Peer
   , Transaction.Transaction (..)
+  , Transaction.InvalidTransaction (..)
   , Tx.TxAccount (..)
   , Tx.TxAsset (..)
 
   , mkAddress
   , mkPath
   , mkPathWithId
+  , mkPathWithIdAndRoute
   , mkSafeString
 
   , pubToBS
@@ -35,6 +38,7 @@ module Uplink.Client
   , uplinkCreateAsset
   , uplinkContract
   , uplinkContracts
+  , uplinkMemPool
   , uplinkPeers
   , uplinkTransactions
   , uplinkInvalidTransactions
@@ -62,6 +66,7 @@ import qualified Uplink.Client.AssetAddress as AssetAddress
 import qualified Uplink.Client.Block as Block
 import qualified Uplink.Client.Contract as Contract
 import qualified Uplink.Client.Config as Config
+import qualified Uplink.Client.Mempool as Mempool
 import qualified Uplink.Client.Peer as Peer
 import qualified Uplink.Client.Version as Version
 import qualified Uplink.Client.Transaction as Transaction
@@ -88,6 +93,9 @@ mkPath = Path <$> T.encodeUtf8 . T.pack
 mkPathWithId :: String -> String -> Path
 mkPathWithId path identifier = Path <$> T.encodeUtf8 . T.pack $ path ++ "/" ++ identifier
 
+mkPathWithIdAndRoute :: String -> String -> String -> Path
+mkPathWithIdAndRoute path identifier route = Path <$> T.encodeUtf8 . T.pack $ path ++ "/" ++ identifier ++ "/" ++ route
+
 mkAddress :: IO Address.Address
 mkAddress = Address.newAddr
 
@@ -108,8 +116,9 @@ data Handle = Handle
   , getValidators   :: Path -> IO (Item [Peer.Peer])
   , getContract     :: Path -> IO (Item Contract.Contract)
   , getContracts    :: Path -> IO (Item [Contract.Contract])
+  , getMempool      :: Path -> IO (Item Mempool.Mempool)
   , getTransactions :: Path -> IO (Item [Transaction.Transaction])
-  , getInvalidTransactions :: Path -> IO (Item [Transaction.Transaction])
+  , getInvalidTransactions :: Path -> IO (Item [Transaction.InvalidTransaction])
   , getVersion      :: Path -> IO (Item Version.Version)
   }
 
@@ -178,6 +187,9 @@ uplinkContract h contractId = getContract h $ mkPathWithId "/contracts" contract
 uplinkContracts :: Handle  -> IO (Item [Contract.Contract])
 uplinkContracts = (`getContracts` mkPath "contracts")
 
+uplinkMemPool :: Handle -> IO (Item Mempool.Mempool)
+uplinkMemPool = (`getMempool` mkPath "/transactions/pool")
+
 uplinkPeers :: Handle -> IO (Item [Peer.Peer])
 uplinkPeers = (`getPeers` mkPath "peers")
 
@@ -187,8 +199,8 @@ uplinkValidators = (`getValidators` mkPath "peers/validators")
 uplinkTransactions :: Handle -> String -> IO (Item [Transaction.Transaction])
 uplinkTransactions h blockId = getTransactions h $ mkPathWithId "/transactions" blockId
 
-uplinkInvalidTransactions :: Handle -> IO (Item [Transaction.Transaction])
-uplinkInvalidTransactions = (`getTransactions` mkPath "/transactions/invalid")
+uplinkInvalidTransactions :: Handle -> IO (Item [Transaction.InvalidTransaction])
+uplinkInvalidTransactions = (`getInvalidTransactions` mkPath "/transactions/invalid")
 
 pubToBS :: Key.PubKey -> BS.ByteString
 pubToBS = Key.unHexPub . Key.hexPub

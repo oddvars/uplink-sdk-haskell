@@ -23,6 +23,7 @@ library
                        Uplink.Client.AssetAddress
                        Uplink.Client.Config
                        Uplink.Client.Contract
+                       Uplink.Client.Mempool
                        Uplink.Client.Peer
                        Uplink.Client.HTTPClient
                        Uplink.Client.Transaction
