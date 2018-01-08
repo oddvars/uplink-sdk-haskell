@@ -22,6 +22,7 @@ import qualified Uplink.Client.Version as Version
 withHTTPClient :: Cfg.Config -> (U.Handle -> IO (U.Item a)) -> IO (U.Item a)
 withHTTPClient cfg f = f U.Handle
   { U.config          = cfg
+  , U.createContract  = createContract cfg
   , U.getAccount      = getAccount cfg
   , U.getAccounts     = getAccounts cfg
   , U.createAccount   = createAccount cfg
@@ -51,6 +52,9 @@ createAccount cfg createAcct = post' cfg createAcct root
 
 createAsset :: Cfg.Config -> Maybe U.Cmd -> IO (U.Item ())
 createAsset cfg mCmd = post' cfg mCmd root
+
+createContract :: Cfg.Config -> Maybe U.Cmd -> IO (U.Item ())
+createContract cfg mCmd = post' cfg mCmd root
 
 getAssets :: Cfg.Config -> U.Path -> IO (U.Item [U.AssetAddress])
 getAssets = flip post' Nothing
@@ -97,7 +101,7 @@ post' cfg mcmd p = do
             else
               initReq { method = "POST", path = U.unpath p }
   res <- httpLbs req man
-  --print res
+  print res
   return $ handleResult res
 
 handleResult :: FromJSON a => Response BSL.ByteString -> U.Item a

@@ -5,9 +5,6 @@
     def uplink_get_contract_callable(self, address):
         contract_by_address = 'contracts/{}/callable'.format(address)
 
-    def uplink_get_mempool(self):
-        result = self._call('GET', endpoint='transactions/pool')
-
     def uplink_get_mempool_size(self):
         result = self._call('GET', endpoint='transactions/pool/size')
 
@@ -62,30 +59,6 @@
             return result
         else:
             raise UplinkJsonRpcError("Malformed CirculateAsset", result)
-
-    def uplink_create_contract(self, private_key, from_address, script):
-        """Create a new Contract"""
-        timestamp = get_time()
-
-        raw_addr = derive_contract_address(timestamp, script)
-
-        hdr = CreateContractHeader(
-            script, from_address, raw_addr,
-            timestamp, storage=None, methods=None)
-        txb = TxContract(CreateContract(hdr))
-
-        r, s = hdr.sign(private_key)
-        signature = pack_signature(r, s)
-
-        tx = Transaction(txb, signature, timestamp,
-                         origin=from_address)
-        params = tx.to_dict()
-
-        result = self._call('Transaction', params=params, endpoint='')
-        if self._handle_success(result):
-            return result, raw_addr
-        else:
-            raise UplinkJsonRpcError("create contract error", result)
 
     def uplink_revoke_asset(self, private_key, from_address, asset_addr):
         """Revoke Asset"""

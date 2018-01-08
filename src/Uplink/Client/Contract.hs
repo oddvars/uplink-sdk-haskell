@@ -17,19 +17,19 @@ data Contract = Contract
   , state             :: T.Text
   , contractAddress   :: Address.Address
   , owner             :: Address.Address
-  , timestamp         :: Time.Timestamp
+  , contractTimestamp :: Time.Timestamp
   , storage           :: Object -- todo: storage
   }
   deriving (Show, Generic)
 
 instance FromJSON Contract where
   parseJSON (Object v) = do
-    script          <- v .: "script"
-    state           <- v .: "state"
-    contractAddress <- v .: "address"
-    owner           <- v .: "owner"
-    timestamp       <- v .: "timestamp"
-    storage         <- v .: "storage"
+    script            <- v .: "script"
+    state             <- v .: "state"
+    contractAddress   <- v .: "address"
+    owner             <- v .: "owner"
+    contractTimestamp <- v .: "timestamp"
+    storage           <- v .: "storage"
     pure Contract{..}
 
   parseJSON invalid  = typeMismatch "Contract" invalid

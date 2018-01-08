@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Uplink.Client.Block where
 
 import Data.Aeson
@@ -11,11 +12,16 @@ import qualified Time
 
 data Block = Block
   { index :: Int
-  , header :: BlockHeader
+  , blockHeader :: BlockHeader
   , signatures :: [BlockSignature]
   } deriving (Show, Generic)
 
-instance FromJSON Block
+instance FromJSON Block where
+  parseJSON (Object v) = do
+    ix   <- v .: "index"
+    hdr  <- v .: "header"
+    sigs <- v .: "signature"
+    return $ Block ix hdr sigs
 
 data BlockHeader = BlockHeader
   { origin :: Address.Address
