@@ -41,67 +41,77 @@ withHTTPClient cfg f = f U.Handle
   , U.getVersion      = getVersion cfg
   }
 
+createAccount :: Cfg.Config -> Maybe U.Cmd -> IO (U.Item RPC.RPCResponse)
+createAccount = execute
+
+createAsset :: Cfg.Config -> Maybe U.Cmd -> IO (U.Item RPC.RPCResponse)
+createAsset = execute
+
+createContract :: Cfg.Config -> Maybe U.Cmd -> IO (U.Item RPC.RPCResponse)
+createContract = execute
+
 getAccount :: Cfg.Config -> U.Path -> IO (U.Item U.Account)
-getAccount = flip post' Nothing
+getAccount = view
 
 getAccounts :: Cfg.Config -> U.Path -> IO (U.Item [U.Account])
-getAccounts = flip post' Nothing
-
-createAccount :: Cfg.Config -> Maybe U.Cmd -> IO (U.Item ())
-createAccount cfg createAcct = post' cfg createAcct root
-
-createAsset :: Cfg.Config -> Maybe U.Cmd -> IO (U.Item ())
-createAsset cfg mCmd = post' cfg mCmd root
-
-createContract :: Cfg.Config -> Maybe U.Cmd -> IO (U.Item ())
-createContract cfg mCmd = post' cfg mCmd root
+getAccounts = view
 
 getAssets :: Cfg.Config -> U.Path -> IO (U.Item [U.AssetAddress])
-getAssets = flip post' Nothing
+getAssets = view
 
 getBlocks :: Cfg.Config -> U.Path -> IO (U.Item [U.Block])
-getBlocks = flip post' Nothing
+getBlocks = view
 
 getBlock :: Cfg.Config -> U.Path -> IO (U.Item U.Block)
-getBlock = flip post' Nothing
+getBlock = view
 
 getAsset :: Cfg.Config -> U.Path -> IO (U.Item Asset.Asset)
-getAsset = flip post' Nothing
+getAsset = view
 
 getContract :: Cfg.Config -> U.Path -> IO (U.Item U.Contract)
-getContract = flip post' Nothing
+getContract = view
 
 getContracts :: Cfg.Config -> U.Path -> IO (U.Item [U.Contract])
-getContracts = flip post' Nothing
+getContracts = view
 
 getMemPool :: Cfg.Config -> U.Path -> IO (U.Item U.Mempool)
-getMemPool = flip post' Nothing
+getMemPool = view
 
 getPeers :: Cfg.Config -> U.Path -> IO (U.Item [U.Peer])
-getPeers = flip post' Nothing
+getPeers = view
 
 getTransactions :: Cfg.Config -> U.Path -> IO (U.Item [U.Transaction])
-getTransactions = flip post' Nothing
+getTransactions = view
 
 getInvalidTransactions :: Cfg.Config -> U.Path -> IO (U.Item [U.InvalidTransaction])
-getInvalidTransactions = flip post' Nothing
+getInvalidTransactions = view
 
 getValidators :: Cfg.Config -> U.Path -> IO (U.Item [U.Peer])
-getValidators = flip post' Nothing
+getValidators = view
 
 getVersion :: Cfg.Config -> U.Path -> IO (U.Item Version.Version)
-getVersion = flip post' Nothing
+getVersion = view
 
-post' :: FromJSON a => Cfg.Config -> Maybe U.Cmd -> U.Path -> IO (U.Item a)
-post' cfg mcmd p = do
+execute :: Cfg.Config -> Maybe U.Cmd -> IO (U.Item RPC.RPCResponse)
+execute cfg mcmd = do
   man <- newManager defaultManagerSettings
   initReq <- parseRequest (Cfg.host cfg)
-  let req = if isJust mcmd then
-              initReq { method = "POST" , requestBody = RequestBodyLBS (encode (fromJust mcmd))}
-            else
-              initReq { method = "POST", path = U.unpath p }
+  let req = initReq { method = "POST" , requestBody = RequestBodyLBS (encode (fromJust mcmd))}
   res <- httpLbs req man
   print res
+  return $
+    if responseStatus res == status200 then
+      case eitherDecode . responseBody $ res of
+        Left e  -> Left (T.pack e)
+        Right r -> Right r
+      else
+        Left (T.decodeUtf8 . statusMessage . responseStatus $ res)
+
+view :: FromJSON a => Cfg.Config -> U.Path -> IO (U.Item a)
+view cfg p = do
+  man <- newManager defaultManagerSettings
+  initReq <- parseRequest (Cfg.host cfg)
+  res <- httpLbs (initReq { method = "POST", path = U.unpath p }) man
   return $ handleResult res
 
 handleResult :: FromJSON a => Response BSL.ByteString -> U.Item a
@@ -112,13 +122,10 @@ handleResult res =
       Left (T.decodeUtf8 . statusMessage . responseStatus $ res)
 
 parse :: FromJSON a => Either String RPC.RPCResponse -> U.Item a
-parse (Left e)                     = Left (T.pack e)
 parse (Right (RPC.RPCRespError e)) = Left (T.pack . show $ e)
 parse (Right (RPC.RPCResp a))      =
   case fromJSON a of
     Success res -> Right res
     Error s     -> Left $ T.pack s
-parse (Right RPC.RPCRespOK)        = Left "ok"
-
-root :: U.Path
-root = U.mkPath ""
+parse (Left e)                     = Left (T.pack e)
+parse (Right RPC.RPCRespOK)        = Left "Error: hit RPCRespOk"

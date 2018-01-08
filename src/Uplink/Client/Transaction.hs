@@ -12,11 +12,8 @@ module Uplink.Client.Transaction
 
 import           Data.Aeson hiding (encode, decode)
 import           Data.Aeson.Types
-import qualified Data.Binary as Binary
 import qualified Data.ByteString as BS
-import qualified Data.Int as I
 import qualified Data.Serialize as S
---import qualified Data.Text as T
 import           GHC.Generics
 import           Protolude
 
@@ -34,7 +31,7 @@ data Transaction = Transaction
 
 instance ToJSON Transaction where
   toJSON t =
-    object $
+    object
       [ "header"    .= header t
       , "signature" .= decodeUtf8 (signature t)
       , "timestamp" .= timestamp t
@@ -42,15 +39,15 @@ instance ToJSON Transaction where
       ]
 instance FromJSON Transaction where
   parseJSON (Object v) = do
-    hd     <- v .: "header"
-    sig    <- v .: "signature"
-    origin <- v .: "origin"
-    ts     <- v .: "timestamp"
+    hd   <- v .: "header"
+    sig  <- v .: "signature"
+    orig <- v .: "origin"
+    t    <- v .: "timestamp"
     pure Transaction
       { header    = hd
       , signature = encodeUtf8 sig
-      , origin    = origin
-      , timestamp = ts
+      , origin    = orig
+      , timestamp = t
       }
 
   parseJSON invalid = typeMismatch "Transaction" invalid
@@ -75,9 +72,9 @@ data TxContract
 instance S.Serialize TxContract where
   put tx = case tx of
     CreateContract addr scr _ _ -> do
-    S.putWord16be 1000
-    Address.putAddress addr
-    SafeString.putSafeString scr
+      S.putWord16be 1000
+      Address.putAddress addr
+      SafeString.putSafeString scr
 
 instance ToJSON   TxContract where
   toJSON (CreateContract addr scrpt ts' own) = object

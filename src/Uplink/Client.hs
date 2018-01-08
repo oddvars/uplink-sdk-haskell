@@ -61,6 +61,7 @@ import qualified Asset
 import qualified Derivation as D
 import qualified Encoding
 import qualified Key
+import qualified RPC
 import qualified SafeString
 import qualified Time
 import qualified Uplink.Client.AssetAddress as AssetAddress
@@ -88,9 +89,9 @@ instance ToJSON Cmd where
 
 data Handle = Handle
   { config                 :: Config.Config
-  , createAsset            :: Maybe Cmd -> IO (Item ())
-  , createAccount          :: Maybe Cmd -> IO (Item ())
-  , createContract         :: Maybe Cmd -> IO (Item ())
+  , createAsset            :: Maybe Cmd -> IO (Item RPC.RPCResponse)
+  , createAccount          :: Maybe Cmd -> IO (Item RPC.RPCResponse)
+  , createContract         :: Maybe Cmd -> IO (Item RPC.RPCResponse)
   , getAccount             :: Path -> IO (Item Account.Account)
   , getAccounts            :: Path -> IO (Item [Account.Account])
   , getAsset               :: Path -> IO (Item Asset.Asset)
@@ -117,7 +118,7 @@ uplinkCreateAccount
   :: Handle
   -> BS.ByteString     -- timezone
   -> Account.Metadata
-  -> IO (Item ())
+  -> IO (Item RPC.RPCResponse)
 uplinkCreateAccount h tz md = do
   (priv, pub, addr) <- Address.newTriple
   ts <- Time.now
@@ -139,7 +140,7 @@ uplinkCreateAsset
   -> Int64            -- supply
   -> Maybe Asset.Ref
   -> Asset.AssetType
-  -> IO (Item ())
+  -> IO (Item RPC.RPCResponse)
 uplinkCreateAsset h n supply mRef atyp = do
   ts <- Time.now
   let cfg     = config h
@@ -156,7 +157,7 @@ uplinkCreateAsset h n supply mRef atyp = do
 uplinkCreateContract
   :: Handle
   -> BS.ByteString -- script
-  -> IO (Item ())
+  -> IO (Item RPC.RPCResponse)
 uplinkCreateContract h script = do
   ts <- Time.now
   let s          = SafeString.fromBytes' script
