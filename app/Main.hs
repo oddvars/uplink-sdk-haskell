@@ -35,7 +35,7 @@ main = do
   contractEx cfg
 
 accountEx :: U.Config -> IO ()
-accountEx cfg = do
+accountEx cfg =
   U.withHTTPClient cfg (\h -> U.uplinkCreateAccount h "GMT" meta) >>= print
   where meta = U.Metadata (Map.fromList[("name", "Haskell")])
 
@@ -45,7 +45,7 @@ assetEx cfg = do
   U.withHTTPClient cfg (\h -> U.uplinkCreateAsset h "haskell asset" 100 (Just Asset.USD) Asset.Discrete) >>= print
 
 blocksEx :: U.Config -> IO ()
-blocksEx cfg = do
+blocksEx cfg =
   U.withHTTPClient cfg (`U.uplinkTransactions` "1") >>= print
 
 contractEx :: U.Config ->  IO ()

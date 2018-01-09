@@ -89,9 +89,9 @@ instance ToJSON Cmd where
 
 data Handle = Handle
   { config                 :: Config.Config
-  , createAsset            :: Maybe Cmd -> IO (Item RPC.RPCResponse)
-  , createAccount          :: Maybe Cmd -> IO (Item RPC.RPCResponse)
-  , createContract         :: Maybe Cmd -> IO (Item RPC.RPCResponse)
+  , createAsset            :: Cmd -> IO (Item RPC.RPCResponse)
+  , createAccount          :: Cmd -> IO (Item RPC.RPCResponse)
+  , createContract         :: Cmd -> IO (Item RPC.RPCResponse)
   , getAccount             :: Path -> IO (Item Account.Account)
   , getAccounts            :: Path -> IO (Item [Account.Account])
   , getAsset               :: Path -> IO (Item Asset.Asset)
@@ -122,11 +122,9 @@ uplinkCreateAccount
 uplinkCreateAccount h tz md = do
   (priv, pub, addr) <- Address.newTriple
   ts <- Time.now
-  sig <- Key.sign priv $ encodeTail (header pub)
+  sig <- Key.sign priv $ S.encode (header pub)
 
-  let t = mkTrans (header pub) sig addr ts
-
-  createAccount h (pure t)
+  h `createAccount `mkTrans (header pub) sig addr ts
 
   where
     header :: Key.PubKey -> Tx.TransactionHeader
@@ -150,9 +148,9 @@ uplinkCreateAsset h n supply mRef atyp = do
       txAsset = Tx.CreateAsset da name' supply mRef atyp
       header' = Tx.TxAsset txAsset
 
-  sig <- Key.sign (Config.privateKey cfg) $ encodeTail header'
+  sig <- Key.sign (Config.privateKey cfg) $ S.encode header'
 
-  createAsset h (pure (mkTrans header' sig origin ts))
+  h `createAsset` mkTrans header' sig origin ts
 
 uplinkCreateContract
   :: Handle
@@ -167,9 +165,9 @@ uplinkCreateContract h script = do
       txContract = Tx.CreateContract a s ts origin
       header'    = Tx.TxContract txContract
 
-  sig <- Key.sign (Config.privateKey cfg) $ encodeTail header'
+  sig <- Key.sign (Config.privateKey cfg) $ S.encode header'
 
-  createContract h (pure (mkTrans header' sig origin ts))
+  h `createContract` mkTrans header' sig origin ts
   where
     derive :: Time.Timestamp -> BS.ByteString -> Address.Address
     derive ts scr = Address.fromRaw (Encoding.b58hash (BS.concat [ BSC.pack (show ts), scr]))
@@ -210,9 +208,6 @@ uplinkInvalidTransactions = (`getInvalidTransactions` mkPath "/transactions/inva
 -- helpers
 mkTrans :: Tx.TransactionHeader -> Key.Signature -> Address.Address -> Time.Timestamp -> Cmd
 mkTrans hdr sig addr' ts' = Cmd (Tx.Transaction hdr (Key.encodeSig sig) addr' ts') "Transaction"
-
-encodeTail :: S.Serialize a => a -> BS.ByteString
-encodeTail a = BS.drop 1 $ S.encode a
 
 pubToBS :: Key.PubKey -> BS.ByteString
 pubToBS = Key.unHexPub . Key.hexPub

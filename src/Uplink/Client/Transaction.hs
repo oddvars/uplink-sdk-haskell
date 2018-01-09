@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE DeriveAnyClass    #-}
+
 module Uplink.Client.Transaction
   ( Transaction (..)
   , TransactionHeader (..)
@@ -56,7 +57,16 @@ data TransactionHeader
   = TxContract TxContract
   | TxAsset Tx.TxAsset
   | TxAccount Tx.TxAccount
-  deriving (Show, Generic, S.Serialize)
+  deriving (Show, Generic)
+
+instance S.Serialize TransactionHeader where
+  put th =
+    let parts =
+          case th of
+            TxContract tx -> S.encode tx
+            TxAsset ax    -> S.encode ax
+            TxAccount ax  -> S.encode ax
+    in S.putByteString parts
 
 instance ToJSON   TransactionHeader
 instance FromJSON TransactionHeader

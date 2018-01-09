@@ -5,7 +5,6 @@ module Uplink.Client.HTTPClient
   where
 
 import           Data.Aeson
-import           Data.Maybe
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
@@ -41,13 +40,13 @@ withHTTPClient cfg f = f U.Handle
   , U.getVersion      = getVersion cfg
   }
 
-createAccount :: Cfg.Config -> Maybe U.Cmd -> IO (U.Item RPC.RPCResponse)
+createAccount :: Cfg.Config -> U.Cmd -> IO (U.Item RPC.RPCResponse)
 createAccount = execute
 
-createAsset :: Cfg.Config -> Maybe U.Cmd -> IO (U.Item RPC.RPCResponse)
+createAsset :: Cfg.Config -> U.Cmd -> IO (U.Item RPC.RPCResponse)
 createAsset = execute
 
-createContract :: Cfg.Config -> Maybe U.Cmd -> IO (U.Item RPC.RPCResponse)
+createContract :: Cfg.Config -> U.Cmd -> IO (U.Item RPC.RPCResponse)
 createContract = execute
 
 getAccount :: Cfg.Config -> U.Path -> IO (U.Item U.Account)
@@ -92,11 +91,11 @@ getValidators = view
 getVersion :: Cfg.Config -> U.Path -> IO (U.Item Version.Version)
 getVersion = view
 
-execute :: Cfg.Config -> Maybe U.Cmd -> IO (U.Item RPC.RPCResponse)
-execute cfg mcmd = do
+execute :: Cfg.Config -> U.Cmd -> IO (U.Item RPC.RPCResponse)
+execute cfg cmd = do
   man <- newManager defaultManagerSettings
   initReq <- parseRequest (Cfg.host cfg)
-  let req = initReq { method = "POST" , requestBody = RequestBodyLBS (encode (fromJust mcmd))}
+  let req = initReq { method = "POST" , requestBody = RequestBodyLBS (encode cmd)}
   res <- httpLbs req man
   print res
   return $
