@@ -43,7 +43,7 @@ module Uplink.Client
   , uplinkTransactions
   , uplinkInvalidTransactions
   , uplinkValidators
---  , uplinkVersion
+  , uplinkVersion
 
   ) where
 
@@ -198,6 +198,9 @@ uplinkPeers = (`getPeers` mkPath "peers")
 
 uplinkValidators :: Handle -> IO (Item [Peer.Peer])
 uplinkValidators = (`getValidators` mkPath "peers/validators")
+
+uplinkVersion :: Handle -> IO (Item Version.Version)
+uplinkVersion = (`getVersion` mkPath "/version")
 
 uplinkTransactions :: Handle -> String -> IO (Item [Tx.Transaction])
 uplinkTransactions h blockId = getTransactions h $ mkPathWithId "/transactions" blockId

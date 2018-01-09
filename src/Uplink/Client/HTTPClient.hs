@@ -1,16 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Uplink.Client.HTTPClient
-  ( withHTTPClient
-  )
+  ( withHTTPClient )
   where
 
 import           Data.Aeson
+import           Data.Bifunctor (first)
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import           Network.HTTP.Client
 import           Network.HTTP.Types
-
 
 import qualified Asset
 import qualified RPC
@@ -20,24 +19,24 @@ import qualified Uplink.Client.Version as Version
 
 withHTTPClient :: Cfg.Config -> (U.Handle -> IO (U.Item a)) -> IO (U.Item a)
 withHTTPClient cfg f = f U.Handle
-  { U.config          = cfg
-  , U.createContract  = createContract cfg
-  , U.getAccount      = getAccount cfg
-  , U.getAccounts     = getAccounts cfg
-  , U.createAccount   = createAccount cfg
-  , U.getAsset        = getAsset cfg
-  , U.getAssets       = getAssets cfg
-  , U.createAsset     = createAsset cfg
-  , U.getBlock        = getBlock cfg
-  , U.getBlocks       = getBlocks cfg
-  , U.getContract     = getContract cfg
-  , U.getContracts    = getContracts cfg
-  , U.getMempool      = getMemPool cfg
-  , U.getPeers        = getPeers cfg
-  , U.getTransactions = getTransactions cfg
+  { U.config                 = cfg
+  , U.createContract         = createContract cfg
+  , U.getAccount             = getAccount cfg
+  , U.getAccounts            = getAccounts cfg
+  , U.createAccount          = createAccount cfg
+  , U.getAsset               = getAsset cfg
+  , U.getAssets              = getAssets cfg
+  , U.createAsset            = createAsset cfg
+  , U.getBlock               = getBlock cfg
+  , U.getBlocks              = getBlocks cfg
+  , U.getContract            = getContract cfg
+  , U.getContracts           = getContracts cfg
+  , U.getMempool             = getMemPool cfg
+  , U.getPeers               = getPeers cfg
+  , U.getTransactions        = getTransactions cfg
   , U.getInvalidTransactions = getInvalidTransactions cfg
-  , U.getValidators   = getValidators cfg
-  , U.getVersion      = getVersion cfg
+  , U.getValidators          = getValidators cfg
+  , U.getVersion             = getVersion cfg
   }
 
 createAccount :: Cfg.Config -> U.Cmd -> IO (U.Item RPC.RPCResponse)
@@ -89,7 +88,7 @@ getValidators :: Cfg.Config -> U.Path -> IO (U.Item [U.Peer])
 getValidators = view
 
 getVersion :: Cfg.Config -> U.Path -> IO (U.Item Version.Version)
-getVersion = view
+getVersion = viewRaw
 
 execute :: Cfg.Config -> U.Cmd -> IO (U.Item RPC.RPCResponse)
 execute cfg cmd = do
@@ -105,6 +104,19 @@ execute cfg cmd = do
         Right r -> Right r
       else
         Left (T.decodeUtf8 . statusMessage . responseStatus $ res)
+
+viewRaw :: FromJSON a => Cfg.Config -> U.Path -> IO (U.Item a)
+viewRaw cfg p = do
+  man <- newManager defaultManagerSettings
+  initReq <- parseRequest (Cfg.host cfg)
+  res <- httpLbs (initReq { method = "POST", path = U.unpath p }) man
+  return $
+    if responseStatus res == status200 then
+      first T.pack (eitherDecode . responseBody $ res)
+    else
+      Left "error"
+
+  --return $ handleResult res
 
 view :: FromJSON a => Cfg.Config -> U.Path -> IO (U.Item a)
 view cfg p = do

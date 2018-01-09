@@ -60,6 +60,10 @@ contractEx cfg = do
   script <- BS.readFile "/home/oddvar/repos/uplink/contracts/minimal.s"
   U.withHTTPClient cfg (`U.uplinkCreateContract` script) >>= print
 
+infoEx :: U.Config -> IO ()
+infoEx cfg = do
+  U.withHTTPClient cfg U.uplinkVersion >>= print
+
 transactionsEx :: U.Config -> IO ()
 transactionsEx cfg = do
   U.withHTTPClient cfg U.uplinkInvalidTransactions >>= print
