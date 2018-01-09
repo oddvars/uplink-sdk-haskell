@@ -64,7 +64,8 @@ infoEx :: U.Config -> IO ()
 infoEx cfg = do
   U.withHTTPClient cfg U.uplinkVersion >>= print
 
-transactionsEx :: U.Config -> IO ()
-transactionsEx cfg = do
+poolEx :: U.Config -> IO ()
+poolEx cfg = do
   U.withHTTPClient cfg U.uplinkInvalidTransactions >>= print
   U.withHTTPClient cfg U.uplinkMemPool >>= print
+  U.withHTTPClient cfg U.uplinkPoolSize >>= print

@@ -20,21 +20,22 @@ import qualified Uplink.Client.Version as Version
 withHTTPClient :: Cfg.Config -> (U.Handle -> IO (U.Item a)) -> IO (U.Item a)
 withHTTPClient cfg f = f U.Handle
   { U.config                 = cfg
+  , U.createAccount          = createAccount cfg
+  , U.createAsset            = createAsset cfg
   , U.createContract         = createContract cfg
   , U.getAccount             = getAccount cfg
   , U.getAccounts            = getAccounts cfg
-  , U.createAccount          = createAccount cfg
   , U.getAsset               = getAsset cfg
   , U.getAssets              = getAssets cfg
-  , U.createAsset            = createAsset cfg
   , U.getBlock               = getBlock cfg
   , U.getBlocks              = getBlocks cfg
   , U.getContract            = getContract cfg
   , U.getContracts           = getContracts cfg
+  , U.getInvalidTransactions = getInvalidTransactions cfg
   , U.getMempool             = getMemPool cfg
   , U.getPeers               = getPeers cfg
+  , U.getPoolSize            = getPoolSize cfg
   , U.getTransactions        = getTransactions cfg
-  , U.getInvalidTransactions = getInvalidTransactions cfg
   , U.getValidators          = getValidators cfg
   , U.getVersion             = getVersion cfg
   }
@@ -77,6 +78,9 @@ getMemPool = view
 
 getPeers :: Cfg.Config -> U.Path -> IO (U.Item [U.Peer])
 getPeers = view
+
+getPoolSize :: Cfg.Config -> U.Path -> IO (U.Item U.Size)
+getPoolSize = viewRaw
 
 getTransactions :: Cfg.Config -> U.Path -> IO (U.Item [U.Transaction])
 getTransactions = view
