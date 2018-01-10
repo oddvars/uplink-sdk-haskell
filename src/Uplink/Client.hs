@@ -45,6 +45,7 @@ module Uplink.Client
   , uplinkMemPool
   , uplinkPeers
   , uplinkPoolSize
+  , uplinkRevokeAccount
   , uplinkTransactions
   , uplinkValidators
   , uplinkVersion
@@ -93,9 +94,9 @@ instance ToJSON Cmd where
 
 data Handle = Handle
   { config                 :: Config.Config
-  , createAsset            :: Cmd -> IO (Item RPC.RPCResponse)
-  , createAccount          :: Cmd -> IO (Item RPC.RPCResponse)
-  , createContract         :: Cmd -> IO (Item RPC.RPCResponse)
+  , createAsset            :: Cmd  -> IO (Item RPC.RPCResponse)
+  , createAccount          :: Cmd  -> IO (Item RPC.RPCResponse)
+  , createContract         :: Cmd  -> IO (Item RPC.RPCResponse)
   , getAccount             :: Path -> IO (Item Account.Account)
   , getAccounts            :: Path -> IO (Item [Account.Account])
   , getAsset               :: Path -> IO (Item Asset.Asset)
@@ -112,6 +113,7 @@ data Handle = Handle
   , getTransactions        :: Path -> IO (Item [Tx.Transaction])
   , getValidators          :: Path -> IO (Item [Peer.Peer])
   , getVersion             :: Path -> IO (Item Version.Version)
+  , revokeAccount          :: Cmd  -> IO (Item RPC.RPCResponse)
   }
 
 uplinkAccount :: Handle -> String -> IO (Item Account.Account)
@@ -199,11 +201,31 @@ uplinkContractCallable h contractId = getContractCallable h $ mkPathWithIdAndRou
 uplinkContracts :: Handle  -> IO (Item [Contract.Contract])
 uplinkContracts = (`getContracts` mkPath "contracts")
 
+uplinkInvalidTransactions :: Handle -> IO (Item [Tx.InvalidTransaction])
+uplinkInvalidTransactions = (`getInvalidTransactions` mkPath "/transactions/invalid")
+
 uplinkMemPool :: Handle -> IO (Item Mempool.Mempool)
 uplinkMemPool = (`getMempool` mkPath "/transactions/pool")
 
 uplinkPeers :: Handle -> IO (Item [Peer.Peer])
 uplinkPeers = (`getPeers` mkPath "peers")
+
+uplinkRevokeAccount
+  :: Handle
+  -> BS.ByteString -- address to revoke
+  -> IO (Item RPC.RPCResponse)
+uplinkRevokeAccount h addr = do
+  let cfg = config h
+  ts <- Time.now
+  sig <- Key.sign (Config.privateKey cfg) $ S.encode header
+
+  h `revokeAccount` mkTrans header sig (Config.originAddress cfg) ts
+
+  where
+    header :: Tx.TransactionHeader
+    header = Tx.TxAccount $ Tx.RevokeAccount (Address.fromRaw addr)
+
+
 
 uplinkValidators :: Handle -> IO (Item [Peer.Peer])
 uplinkValidators = (`getValidators` mkPath "peers/validators")
@@ -216,9 +238,6 @@ uplinkVersion = (`getVersion` mkPath "/version")
 
 uplinkTransactions :: Handle -> String -> IO (Item [Tx.Transaction])
 uplinkTransactions h blockId = getTransactions h $ mkPathWithId "/transactions" blockId
-
-uplinkInvalidTransactions :: Handle -> IO (Item [Tx.InvalidTransaction])
-uplinkInvalidTransactions = (`getInvalidTransactions` mkPath "/transactions/invalid")
 
 -- helpers
 mkTrans :: Tx.TransactionHeader -> Key.Signature -> Address.Address -> Time.Timestamp -> Cmd
