@@ -3,10 +3,11 @@
 {-# LANGUAGE DeriveGeneric     #-}
 module Uplink.Client.Contract where
 
-import Data.Aeson
-import Data.Aeson.Types (typeMismatch)
+import           Data.Aeson
+import           Data.Aeson.Types (typeMismatch)
+import qualified Data.HashMap.Strict as M
 import qualified Data.Text as T
-import GHC.Generics
+import           GHC.Generics
 
 import qualified Address
 import qualified Time
@@ -33,3 +34,5 @@ instance FromJSON Contract where
     pure Contract{..}
 
   parseJSON invalid  = typeMismatch "Contract" invalid
+
+type Method = M.HashMap T.Text Array

@@ -30,6 +30,7 @@ withHTTPClient cfg f = f U.Handle
   , U.getBlock               = getBlock cfg
   , U.getBlocks              = getBlocks cfg
   , U.getContract            = getContract cfg
+  , U.getContractCallable    = getContractCallable cfg
   , U.getContracts           = getContracts cfg
   , U.getInvalidTransactions = getInvalidTransactions cfg
   , U.getMempool             = getMemPool cfg
@@ -69,6 +70,9 @@ getAsset = view
 
 getContract :: Cfg.Config -> U.Path -> IO (U.Item U.Contract)
 getContract = view
+
+getContractCallable :: Cfg.Config -> U.Path -> IO (U.Item U.Method)
+getContractCallable = view
 
 getContracts :: Cfg.Config -> U.Path -> IO (U.Item [U.Contract])
 getContracts = view
@@ -127,6 +131,7 @@ view cfg p = do
   man <- newManager defaultManagerSettings
   initReq <- parseRequest (Cfg.host cfg)
   res <- httpLbs (initReq { method = "POST", path = U.unpath p }) man
+  print res
   return $ handleResult res
 
 handleResult :: FromJSON a => Response BSL.ByteString -> U.Item a

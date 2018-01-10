@@ -54,7 +54,9 @@ contractEx cfg = do
   U.withHTTPClient cfg U.uplinkContracts >>= print
 
   putStrLn "-- single contracts --"
-  U.withHTTPClient cfg (`U.uplinkContract` "5iPNiNwhnyYxQ1Qn496csxKVsiDs12nq1XCY5DVZeTgM") >>= print
+  let cid = "JCEeU4mQ9v6HY6BKoqpdXLjmHo2N2UnAnmkQBobhxrfA"
+  U.withHTTPClient cfg (`U.uplinkContract` cid) >>= print
+  U.withHTTPClient cfg (`U.uplinkContractCallable` cid) >>= print
 
   putStrLn "-- create contract--"
   script <- BS.readFile "/home/oddvar/repos/uplink/contracts/minimal.s"

@@ -14,6 +14,7 @@ module Uplink.Client
   , Mempool.Size (..)
   , Path
   , Peer.Peer
+  , Contract.Method
   , Tx.Transaction (..)
   , Tx.InvalidTransaction (..)
   , Tx.TxAccount (..)
@@ -38,6 +39,7 @@ module Uplink.Client
   , uplinkCreateAsset
   , uplinkCreateContract
   , uplinkContract
+  , uplinkContractCallable
   , uplinkContracts
   , uplinkInvalidTransactions
   , uplinkMemPool
@@ -101,6 +103,7 @@ data Handle = Handle
   , getBlock               :: Path -> IO (Item Block.Block)
   , getBlocks              :: Path -> IO (Item [Block.Block])
   , getContract            :: Path -> IO (Item Contract.Contract)
+  , getContractCallable    :: Path -> IO (Item Contract.Method)
   , getContracts           :: Path -> IO (Item [Contract.Contract])
   , getInvalidTransactions :: Path -> IO (Item [Tx.InvalidTransaction])
   , getMempool             :: Path -> IO (Item Mempool.Mempool)
@@ -189,6 +192,9 @@ uplinkBlocks = (`getBlocks` mkPath "blocks")
 
 uplinkContract :: Handle -> String -> IO (Item Contract.Contract)
 uplinkContract h contractId = getContract h $ mkPathWithId "/contracts" contractId
+
+uplinkContractCallable :: Handle -> String -> IO (Item Contract.Method)
+uplinkContractCallable h contractId = getContractCallable h $ mkPathWithIdAndRoute "/contracts" contractId "callable"
 
 uplinkContracts :: Handle  -> IO (Item [Contract.Contract])
 uplinkContracts = (`getContracts` mkPath "contracts")

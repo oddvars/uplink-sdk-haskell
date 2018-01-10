@@ -1,7 +1,4 @@
 {-
-    def uplink_get_contract_callable(self, address):
-        contract_by_address = 'contracts/{}/callable'.format(address)
-
     def uplink_get_mempools(self):
         return self._call('GET', endpoint='transactions/pool/all')
 
