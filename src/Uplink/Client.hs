@@ -48,6 +48,7 @@ module Uplink.Client
   , uplinkPoolSize
   , uplinkRevokeAccount
   , uplinkTransactions
+  , uplinkTransferAsset
   , uplinkValidators
   , uplinkVersion
 
@@ -95,11 +96,16 @@ instance ToJSON Cmd where
 
 data Handle = Handle
   { config                 :: Config.Config
-  --
+
+  -- executes
   , circulateAsset         :: Cmd  -> IO (Item RPC.RPCResponse)
   , createAsset            :: Cmd  -> IO (Item RPC.RPCResponse)
   , createAccount          :: Cmd  -> IO (Item RPC.RPCResponse)
   , createContract         :: Cmd  -> IO (Item RPC.RPCResponse)
+  , revokeAccount          :: Cmd  -> IO (Item RPC.RPCResponse)
+  , transferAsset          :: Cmd  -> IO (Item RPC.RPCResponse)
+
+  -- views
   , getAccount             :: Path -> IO (Item Account.Account)
   , getAccounts            :: Path -> IO (Item [Account.Account])
   , getAsset               :: Path -> IO (Item Asset.Asset)
@@ -116,19 +122,13 @@ data Handle = Handle
   , getTransactions        :: Path -> IO (Item [Tx.Transaction])
   , getValidators          :: Path -> IO (Item [Peer.Peer])
   , getVersion             :: Path -> IO (Item Version.Version)
-  , revokeAccount          :: Cmd  -> IO (Item RPC.RPCResponse)
   }
 
-uplinkAccount :: Handle -> String -> IO (Item Account.Account)
-uplinkAccount h accountId = getAccount h $ mkPathWithId "/accounts" accountId
-
-uplinkAccounts :: Handle -> IO (Item [Account.Account])
-uplinkAccounts = (`getAccounts` mkPath "accounts")
-
+-- execute functions
 uplinkCirculateAsset
   :: Handle
   -> Address.Address -- address of asset
-  -> Int64 
+  -> Int64
   -> IO (Item RPC.RPCResponse)
 uplinkCirculateAsset h t a = do
   ts <- Time.now
@@ -195,6 +195,29 @@ uplinkCreateContract h script = do
   where
     derive :: Time.Timestamp -> BS.ByteString -> Address.Address
     derive ts scr = Address.fromRaw (Encoding.b58hash (BS.concat [ BSC.pack (show ts), scr]))
+
+uplinkTransferAsset
+  :: Handle
+  -> Address.Address  -- asset address
+  -> Address.Address  -- to
+  -> Int64
+  -> IO (Item RPC.RPCResponse)
+uplinkTransferAsset h a t b  = do
+  ts <- Time.now
+  let cfg = config h
+      header = Tx.TxAsset $ Tx.Transfer a t b
+      origin     = Config.originAddress cfg
+  sig <- Key.sign (Config.privateKey cfg) $ S.encode header
+
+  h `transferAsset` mkTrans header sig origin ts
+
+
+-- view functions
+uplinkAccount :: Handle -> String -> IO (Item Account.Account)
+uplinkAccount h accountId = getAccount h $ mkPathWithId "/accounts" accountId
+
+uplinkAccounts :: Handle -> IO (Item [Account.Account])
+uplinkAccounts = (`getAccounts` mkPath "accounts")
 
 uplinkAsset :: Handle -> String -> IO (Item Asset.Asset)
 uplinkAsset h assetId = getAsset h $ mkPathWithId "/assets" assetId

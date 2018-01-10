@@ -13,24 +13,6 @@
             "params": {}
         }
 
-    def uplink_transfer_asset(self, private_key, from_address, to_address, balance, asset_address):
-        timestamp = get_time()
-
-        hdr = TransferAssetHeader(asset_address, to_address, balance)
-        txb = TxAsset(Transfer(hdr))
-
-        r, s = hdr.sign(private_key)
-        signature = pack_signature(r, s)
-
-        tx = Transaction(txb, signature.decode(), timestamp,
-                         origin=from_address)
-        params = tx.to_dict()
-        result = self._call('Transaction', params=params, endpoint='')
-        if self._handle_success(result):
-            return result
-        else:
-            raise UplinkJsonRpcError("Malformed TransferAsset", result)
-
     def uplink_revoke_asset(self, private_key, from_address, asset_addr):
         """Revoke Asset"""
         timestamp = get_time()

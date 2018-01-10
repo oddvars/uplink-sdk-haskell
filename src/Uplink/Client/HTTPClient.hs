@@ -39,6 +39,7 @@ withHTTPClient cfg f = f U.Handle
   , U.getValidators          = view cfg
   , U.getVersion             = viewRaw cfg
   , U.revokeAccount          = execute cfg
+  , U.transferAsset          = execute cfg
   }
 
 execute :: Cfg.Config -> U.Cmd -> IO (U.Item RPC.RPCResponse)
