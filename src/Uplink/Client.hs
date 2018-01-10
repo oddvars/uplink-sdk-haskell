@@ -35,6 +35,7 @@ module Uplink.Client
   , uplinkBlocks
   , uplinkAsset
   , uplinkAssets
+  , uplinkCirculateAsset
   , uplinkCreateAccount
   , uplinkCreateAsset
   , uplinkCreateContract
@@ -94,6 +95,8 @@ instance ToJSON Cmd where
 
 data Handle = Handle
   { config                 :: Config.Config
+  --
+  , circulateAsset         :: Cmd  -> IO (Item RPC.RPCResponse)
   , createAsset            :: Cmd  -> IO (Item RPC.RPCResponse)
   , createAccount          :: Cmd  -> IO (Item RPC.RPCResponse)
   , createContract         :: Cmd  -> IO (Item RPC.RPCResponse)
@@ -121,6 +124,19 @@ uplinkAccount h accountId = getAccount h $ mkPathWithId "/accounts" accountId
 
 uplinkAccounts :: Handle -> IO (Item [Account.Account])
 uplinkAccounts = (`getAccounts` mkPath "accounts")
+
+uplinkCirculateAsset
+  :: Handle
+  -> Address.Address -- address of asset
+  -> Int64 
+  -> IO (Item RPC.RPCResponse)
+uplinkCirculateAsset h t a = do
+  ts <- Time.now
+  let cfg = config h
+      header' = Tx.TxAsset $ Tx.Circulate t a
+      origin = (Config.originAddress cfg)
+  sig <- Key.sign (Config.privateKey cfg) $ S.encode header'
+  h `circulateAsset` mkTrans header' sig origin ts
 
 uplinkCreateAccount
   :: Handle

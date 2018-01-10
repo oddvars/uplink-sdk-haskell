@@ -31,26 +31,6 @@
         else:
             raise UplinkJsonRpcError("Malformed TransferAsset", result)
 
-    def uplink_circulate_asset(self, private_key, from_address, amount, asset_address):
-        """Circulate assets"""
-        timestamp = get_time()
-
-        hdr = CirculateAssetHeader(asset_address, amount)
-        txb = TxAsset(Circulate(hdr))
-
-        r, s = hdr.sign(private_key)
-        signature = pack_signature(r, s)
-
-        tx = Transaction(txb, signature.decode(), timestamp,
-                         origin=from_address)
-        params = tx.to_dict()
-        print(params)
-        result = self._call('Transaction', params=params, endpoint='')
-        if self._handle_success(result):
-            return result
-        else:
-            raise UplinkJsonRpcError("Malformed CirculateAsset", result)
-
     def uplink_revoke_asset(self, private_key, from_address, asset_addr):
         """Revoke Asset"""
         timestamp = get_time()
@@ -71,25 +51,6 @@
         else:
             raise UplinkJsonRpcError("Malformed RevokeAsset", result)
 
-    def uplink_revoke_account(self, private_key, from_address, account_addr):
-        """Revoke account access"""
-        timestamp = get_time()
-
-        hdr = RevokeAccountHeader(account_addr)
-        txb = TxAccount(RevokeAccount(hdr))
-
-        r, s = hdr.sign(private_key)
-        signature = pack_signature(r, s)
-
-        # to_address=to_address)
-        tx = Transaction(txb, signature, timestamp, origin=from_address)
-        params = tx.to_dict()
-
-        result = self._call('Transaction', params=params, endpoint='')
-        if self._handle_success(result):
-            return result
-        else:
-            raise UplinkJsonRpcError("Malformed RevokeAccount", result)
 
     def uplink_bind_asset(self, private_key, from_address, contract_addr, asset_addr):
         """Bind asset to a contract"""

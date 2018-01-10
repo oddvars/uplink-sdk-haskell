@@ -18,6 +18,7 @@ import qualified Uplink.Client.Config as Cfg
 withHTTPClient :: Cfg.Config -> (U.Handle -> IO (U.Item a)) -> IO (U.Item a)
 withHTTPClient cfg f = f U.Handle
   { U.config                 = cfg
+  , U.circulateAsset         = execute cfg
   , U.createAccount          = execute cfg
   , U.createAsset            = execute cfg
   , U.createContract         = execute cfg
