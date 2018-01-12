@@ -23,6 +23,9 @@ withHTTPClient cfg f = f U.Handle
   , U.createAccount          = execute cfg
   , U.createAsset            = execute cfg
   , U.createContract         = execute cfg
+  , U.revokeAccount          = execute cfg
+  , U.revokeAsset            = execute cfg
+  , U.transferAsset          = execute cfg
   , U.getAccount             = view cfg
   , U.getAccounts            = view cfg
   , U.getAsset               = view cfg
@@ -39,8 +42,6 @@ withHTTPClient cfg f = f U.Handle
   , U.getTransactions        = view cfg
   , U.getValidators          = view cfg
   , U.getVersion             = viewRaw cfg
-  , U.revokeAccount          = execute cfg
-  , U.transferAsset          = execute cfg
   }
 
 execute :: Cfg.Config -> U.Cmd -> IO (U.Item RPC.RPCResponse)

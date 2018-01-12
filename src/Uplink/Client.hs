@@ -48,6 +48,7 @@ module Uplink.Client
   , uplinkPeers
   , uplinkPoolSize
   , uplinkRevokeAccount
+  , uplinkRevokeAsset
   , uplinkTransactions
   , uplinkTransferAsset
   , uplinkValidators
@@ -106,6 +107,7 @@ data Handle = Handle
   , createAccount          :: Cmd  -> IO (Item RPC.RPCResponse)
   , createContract         :: Cmd  -> IO (Item RPC.RPCResponse)
   , revokeAccount          :: Cmd  -> IO (Item RPC.RPCResponse)
+  , revokeAsset            :: Cmd  -> IO (Item RPC.RPCResponse)
   , transferAsset          :: Cmd  -> IO (Item RPC.RPCResponse)
 
   -- views
@@ -214,6 +216,37 @@ uplinkCreateContract h script = do
     derive :: Time.Timestamp -> BS.ByteString -> Address.Address
     derive ts scr = Address.fromRaw (Encoding.b58hash (BS.concat [ BSC.pack (show ts), scr]))
 
+
+uplinkRevokeAccount
+  :: Handle
+  -> BS.ByteString -- address to revoke
+  -> IO (Item RPC.RPCResponse)
+uplinkRevokeAccount h addr = do
+  let cfg = config h
+  ts <- Time.now
+  sig <- Key.sign (Config.privateKey cfg) $ S.encode header
+
+  h `revokeAccount` mkTrans header sig (Config.originAddress cfg) ts
+
+  where
+    header :: Tx.TransactionHeader
+    header = Tx.TxAccount $ Tx.RevokeAccount (Address.fromRaw addr)
+
+uplinkRevokeAsset
+  :: Handle
+  -> Address.Address -- address to revoke
+  -> IO (Item RPC.RPCResponse)
+uplinkRevokeAsset h addr = do
+  let cfg = config h
+  ts <- Time.now
+  sig <- Key.sign (Config.privateKey cfg) $ S.encode header
+
+  h `revokeAsset` mkTrans header sig (Config.originAddress cfg) ts
+
+  where
+    header :: Tx.TransactionHeader
+    header = Tx.TxAsset $ Tx.RevokeAsset addr
+
 uplinkTransferAsset
   :: Handle
   -> Address.Address  -- asset address
@@ -266,23 +299,6 @@ uplinkMemPool = (`getMempool` mkPath "/transactions/pool")
 
 uplinkPeers :: Handle -> IO (Item [Peer.Peer])
 uplinkPeers = (`getPeers` mkPath "peers")
-
-uplinkRevokeAccount
-  :: Handle
-  -> BS.ByteString -- address to revoke
-  -> IO (Item RPC.RPCResponse)
-uplinkRevokeAccount h addr = do
-  let cfg = config h
-  ts <- Time.now
-  sig <- Key.sign (Config.privateKey cfg) $ S.encode header
-
-  h `revokeAccount` mkTrans header sig (Config.originAddress cfg) ts
-
-  where
-    header :: Tx.TransactionHeader
-    header = Tx.TxAccount $ Tx.RevokeAccount (Address.fromRaw addr)
-
-
 
 uplinkValidators :: Handle -> IO (Item [Peer.Peer])
 uplinkValidators = (`getValidators` mkPath "peers/validators")
