@@ -58,26 +58,6 @@
         else:
             raise UplinkJsonRpcError("Malformed BindAsset", result)
 
-    def uplink_call_contract(self, private_key, from_address, contract_addr, method, args):
-        timestamp = get_time()
-
-        hdr = CallHeader(contract_addr, method, args)
-        txb = TxContract(Call(hdr))
-
-        r, s = hdr.sign(private_key)
-        signature = pack_signature(r, s)
-
-        tx = Transaction(txb, signature, timestamp,
-                         origin=from_address)  # to_address=to_address)
-        params = tx.to_dict()
-
-        result = self._call('Transaction', params=params, endpoint='')
-
-        if self._handle_success(result):
-            return result
-        else:
-            raise UplinkJsonRpcError("Malformed CallContract", result)
-
     def uplink_sync_local(self, private_key, from_address, contract_addr):
         timestamp = get_time()
 

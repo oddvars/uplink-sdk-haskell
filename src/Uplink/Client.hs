@@ -35,6 +35,7 @@ module Uplink.Client
   , uplinkBlocks
   , uplinkAsset
   , uplinkAssets
+  , uplinkCallContract
   , uplinkCirculateAsset
   , uplinkCreateAccount
   , uplinkCreateAsset
@@ -70,6 +71,7 @@ import qualified Encoding
 import qualified Key
 import qualified RPC
 import qualified SafeString
+import qualified Storage
 import qualified Time
 import qualified Uplink.Client.AssetAddress as AssetAddress
 import qualified Uplink.Client.Block as Block
@@ -98,6 +100,7 @@ data Handle = Handle
   { config                 :: Config.Config
 
   -- executes
+  , callContract           :: Cmd  -> IO (Item RPC.RPCResponse)
   , circulateAsset         :: Cmd  -> IO (Item RPC.RPCResponse)
   , createAsset            :: Cmd  -> IO (Item RPC.RPCResponse)
   , createAccount          :: Cmd  -> IO (Item RPC.RPCResponse)
@@ -125,6 +128,21 @@ data Handle = Handle
   }
 
 -- execute functions
+uplinkCallContract
+  :: Handle
+  -> Address.Address
+  -> SafeString.SafeString -- method
+  -> [Storage.Value] -- args
+  -> IO (Item RPC.RPCResponse)
+uplinkCallContract h a m args = do
+  ts <- Time.now
+  let cfg = config h
+      header = Tx.TxContract $ Tx.Call a m args
+      origin = Config.originAddress cfg
+  sig <- Key.sign (Config.privateKey cfg) $ S.encode header
+
+  h `callContract` mkTrans header sig origin ts
+
 uplinkCirculateAsset
   :: Handle
   -> Address.Address -- address of asset
@@ -133,10 +151,10 @@ uplinkCirculateAsset
 uplinkCirculateAsset h t a = do
   ts <- Time.now
   let cfg = config h
-      header' = Tx.TxAsset $ Tx.Circulate t a
-      origin = (Config.originAddress cfg)
-  sig <- Key.sign (Config.privateKey cfg) $ S.encode header'
-  h `circulateAsset` mkTrans header' sig origin ts
+      header = Tx.TxAsset $ Tx.Circulate t a
+      origin = Config.originAddress cfg
+  sig <- Key.sign (Config.privateKey cfg) $ S.encode header
+  h `circulateAsset` mkTrans header sig origin ts
 
 uplinkCreateAccount
   :: Handle
@@ -170,11 +188,11 @@ uplinkCreateAsset h n supply mRef atyp = do
       da      = D.addrAsset n origin supply mRef atyp ts
       name'   = SafeString.fromBytes' n
       txAsset = Tx.CreateAsset da name' supply mRef atyp
-      header' = Tx.TxAsset txAsset
+      header = Tx.TxAsset txAsset
 
-  sig <- Key.sign (Config.privateKey cfg) $ S.encode header'
+  sig <- Key.sign (Config.privateKey cfg) $ S.encode header
 
-  h `createAsset` mkTrans header' sig origin ts
+  h `createAsset` mkTrans header sig origin ts
 
 uplinkCreateContract
   :: Handle
@@ -187,11 +205,11 @@ uplinkCreateContract h script = do
       origin     = Config.originAddress cfg
       a          = derive ts script
       txContract = Tx.CreateContract a s ts origin
-      header'    = Tx.TxContract txContract
+      header    = Tx.TxContract txContract
 
-  sig <- Key.sign (Config.privateKey cfg) $ S.encode header'
+  sig <- Key.sign (Config.privateKey cfg) $ S.encode header
 
-  h `createContract` mkTrans header' sig origin ts
+  h `createContract` mkTrans header sig origin ts
   where
     derive :: Time.Timestamp -> BS.ByteString -> Address.Address
     derive ts scr = Address.fromRaw (Encoding.b58hash (BS.concat [ BSC.pack (show ts), scr]))

@@ -22,6 +22,7 @@ import qualified Address
 import qualified Time
 import qualified Transaction as Tx
 import qualified SafeString
+import qualified Storage
 
 data Transaction = Transaction
   { header :: TransactionHeader
@@ -77,7 +78,13 @@ data TxContract
    , script  :: SafeString.SafeString
    , ts      :: Time.Timestamp
    , owner   :: Address.Address
- } deriving (Show, Generic)
+ }
+ | Call {
+     address :: Address.Address
+   , method  :: SafeString.SafeString
+   , args    :: [Storage.Value]
+ }
+ deriving (Show, Generic)
 
 instance S.Serialize TxContract where
   put tx = case tx of
@@ -85,6 +92,14 @@ instance S.Serialize TxContract where
       S.putWord16be 1000
       Address.putAddress addr
       SafeString.putSafeString scr
+
+    Call addr m a -> do
+      let bs = SafeString.toBytes m
+      S.putWord16be 1002
+      Address.putAddress addr
+      S.putWord64be (fromIntegral $ BS.length bs)
+      S.putByteString (SafeString.toBytes m)
+      S.put a
 
 instance ToJSON   TxContract where
   toJSON (CreateContract addr scrpt ts' own) = object
@@ -94,6 +109,14 @@ instance ToJSON   TxContract where
         , "script"    .= scrpt
         , "timestamp" .= ts'
         , "owner"     .= own
+        ]
+    ]
+  toJSON (Call addr m arg) = object
+    [ "tag"       .= ("Call" :: Text)
+    , "contents"  .= object
+        [ "address" .= addr
+        , "method"  .= m
+        , "args"    .= arg
         ]
     ]
 instance FromJSON TxContract

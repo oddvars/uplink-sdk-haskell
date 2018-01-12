@@ -11,6 +11,8 @@ import qualified Asset
 import qualified Account
 import qualified Address
 import qualified Key
+import qualified SafeString
+import qualified Script
 import qualified Uplink as U
 
 getConfig :: IO U.Config
@@ -58,9 +60,15 @@ contractEx cfg = do
   U.withHTTPClient cfg (`U.uplinkContract` cid) >>= print
   U.withHTTPClient cfg (`U.uplinkContractCallable` cid) >>= print
 
-  putStrLn "-- create contract--"
+  putStrLn "-- create contract --"
   script <- BS.readFile "/home/oddvar/repos/uplink/contracts/minimal.s"
   U.withHTTPClient cfg (`U.uplinkCreateContract` script) >>= print
+
+  putStrLn "-- call contract --"
+  let method = SafeString.fromBytes' "setX"
+      addr   = Address.fromRaw "JCEeU4mQ9v6HY6BKoqpdXLjmHo2N2UnAnmkQBobhxrfA"
+      args   = []
+  U.withHTTPClient cfg (\h -> U.uplinkCallContract h addr method args ) >>= print
 
 infoEx :: U.Config -> IO ()
 infoEx cfg = do
