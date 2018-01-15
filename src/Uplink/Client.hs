@@ -45,8 +45,10 @@ module Uplink.Client
   , uplinkContracts
   , uplinkInvalidTransactions
   , uplinkMemPool
+  , uplinkMemPools
   , uplinkPeers
   , uplinkPoolSize
+  , uplinkPoolSizes
   , uplinkRevokeAccount
   , uplinkRevokeAsset
   , uplinkTransactions
@@ -122,8 +124,10 @@ data Handle = Handle
   , getContracts           :: Path -> IO (Item [Contract.Contract])
   , getInvalidTransactions :: Path -> IO (Item [Tx.InvalidTransaction])
   , getMempool             :: Path -> IO (Item Mempool.Mempool)
+  , getMempools            :: Path -> IO (Item Value) -- todo: set real type
   , getPeers               :: Path -> IO (Item [Peer.Peer])
   , getPoolSize            :: Path -> IO (Item Mempool.Size)
+  , getPoolSizes           :: Path -> IO (Item Value) -- todo: set real type
   , getTransactions        :: Path -> IO (Item [Tx.Transaction])
   , getValidators          :: Path -> IO (Item [Peer.Peer])
   , getVersion             :: Path -> IO (Item Version.Version)
@@ -297,6 +301,9 @@ uplinkInvalidTransactions = (`getInvalidTransactions` mkPath "/transactions/inva
 uplinkMemPool :: Handle -> IO (Item Mempool.Mempool)
 uplinkMemPool = (`getMempool` mkPath "/transactions/pool")
 
+uplinkMemPools :: Handle -> IO (Item Value)
+uplinkMemPools = (`getMempools` mkPath "/transactions/pool/all")
+
 uplinkPeers :: Handle -> IO (Item [Peer.Peer])
 uplinkPeers = (`getPeers` mkPath "peers")
 
@@ -305,6 +312,9 @@ uplinkValidators = (`getValidators` mkPath "peers/validators")
 
 uplinkPoolSize :: Handle -> IO (Item Mempool.Size)
 uplinkPoolSize = (`getPoolSize` mkPath "transactions/pool/size")
+
+uplinkPoolSizes :: Handle -> IO (Item Value)
+uplinkPoolSizes = (`getPoolSizes` mkPath "transactions/pool/all/sizes")
 
 uplinkVersion :: Handle -> IO (Item Version.Version)
 uplinkVersion = (`getVersion` mkPath "/version")

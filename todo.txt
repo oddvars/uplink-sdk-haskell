@@ -1,10 +1,4 @@
 {-
-    def uplink_get_mempools(self):
-        return self._call('GET', endpoint='transactions/pool/all')
-
-    def uplink_get_mempools_sizes(self):
-        return self._call('GET', endpoint='transactions/pool/all/sizes')
-
     def uplink_test_saturate_network(self, n_txs, n_secs):
 
     def uplink_test_reset_mempools(self):
