@@ -7,30 +7,6 @@
             "params": {}
         }
 
-    def uplink_bind_asset(self, private_key, from_address, contract_addr, asset_addr):
-        """Bind asset to a contract"""
-        timestamp = get_time()
-
-        hdr = BindHeader(contract_addr, asset_addr)
-        txb = TxAsset(Bind(hdr))
-
-        r, s = hdr.sign(private_key)
-        signature = pack_signature(r, s)
-
-        # XXX Not implemented yet.
-        # to_address = derive_contract_address()
-
-        tx = Transaction(txb, signature, timestamp,
-                         origin=from_address)  # to_address=to_address)
-        params = tx.to_dict()
-
-        result = self._call('Transaction', params=params, endpoint='')
-
-        if self._handle_success(result):
-            return result
-        else:
-            raise UplinkJsonRpcError("Malformed BindAsset", result)
-
     def uplink_sync_local(self, private_key, from_address, contract_addr):
         timestamp = get_time()
 
