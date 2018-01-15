@@ -11,6 +11,7 @@ import qualified Asset
 import qualified Account
 import qualified Address
 import qualified Key
+import qualified RPC
 import qualified SafeString
 import qualified Script
 import qualified Uplink as U

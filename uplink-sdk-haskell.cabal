@@ -25,6 +25,7 @@ library
                        Uplink.Client.Contract
                        Uplink.Client.Mempool
                        Uplink.Client.Peer
+                       Uplink.Client.RPC
                        Uplink.Client.HTTPClient
                        Uplink.Client.Transaction
                        Uplink.Client.Version

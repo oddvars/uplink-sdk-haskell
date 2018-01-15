@@ -72,7 +72,7 @@ import qualified Asset
 import qualified Derivation as D
 import qualified Encoding
 import qualified Key
-import qualified RPC
+--import qualified RPC
 import qualified SafeString
 import qualified Storage
 import qualified Time
@@ -82,6 +82,7 @@ import qualified Uplink.Client.Contract as Contract
 import qualified Uplink.Client.Config as Config
 import qualified Uplink.Client.Mempool as Mempool
 import qualified Uplink.Client.Peer as Peer
+import qualified Uplink.Client.RPC as RPC
 import qualified Uplink.Client.Version as Version
 import qualified Uplink.Client.Transaction as Tx
 

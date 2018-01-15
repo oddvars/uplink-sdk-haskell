@@ -11,7 +11,8 @@ import qualified Data.Text.Encoding as T
 import           Network.HTTP.Client
 import           Network.HTTP.Types
 
-import qualified RPC
+--import qualified RPC
+import qualified Uplink.Client.RPC as RPC
 import qualified Uplink.Client as U
 import qualified Uplink.Client.Config as Cfg
 
@@ -58,8 +59,8 @@ execute cfg cmd = do
       case eitherDecode . responseBody $ res of
         Left e  -> Left (T.pack e)
         Right r -> Right r
-      else
-        Left (T.decodeUtf8 . statusMessage . responseStatus $ res)
+    else
+      Left (T.decodeUtf8 . statusMessage . responseStatus $ res)
 
 viewRaw :: FromJSON a => Cfg.Config -> U.Path -> IO (U.Item a)
 viewRaw cfg p = do
