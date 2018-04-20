@@ -3,6 +3,7 @@
 module Uplink.Client.Block where
 
 import Data.Aeson
+import Data.Aeson.Types
 import qualified Data.Text as T
 import GHC.Generics
 
@@ -22,6 +23,8 @@ instance FromJSON Block where
     hdr  <- v .: "header"
     sigs <- v .: "signature"
     return $ Block ix hdr sigs
+
+  parseJSON invalid = typeMismatch "Block" invalid
 
 data BlockHeader = BlockHeader
   { origin :: Address.Address

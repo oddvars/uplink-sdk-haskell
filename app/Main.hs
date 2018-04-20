@@ -11,9 +11,7 @@ import qualified Asset
 import qualified Account
 import qualified Address
 import qualified Key
-import qualified RPC
 import qualified SafeString
-import qualified Script
 import qualified Uplink as U
 
 getConfig :: IO U.Config
@@ -72,8 +70,7 @@ contractEx cfg = do
   U.withHTTPClient cfg (\h -> U.uplinkCallContract h addr method args ) >>= print
 
 infoEx :: U.Config -> IO ()
-infoEx cfg = do
-  U.withHTTPClient cfg U.uplinkVersion >>= print
+infoEx cfg = U.withHTTPClient cfg U.uplinkVersion >>= print
 
 poolEx :: U.Config -> IO ()
 poolEx cfg = do

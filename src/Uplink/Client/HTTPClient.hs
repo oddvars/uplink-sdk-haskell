@@ -53,7 +53,6 @@ execute cfg cmd = do
   initReq <- parseRequest (Cfg.host cfg)
   let req = initReq { method = "POST" , requestBody = RequestBodyLBS (encode cmd)}
   res <- httpLbs req man
-  print res
   return $
     if responseStatus res == status200 then
       case eitherDecode . responseBody $ res of

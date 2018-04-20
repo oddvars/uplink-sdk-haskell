@@ -82,7 +82,7 @@ data TxContract
  | Call {
      address :: Address.Address
    , method  :: SafeString.SafeString
-   , args    :: [Storage.Value]
+    , args    :: [Storage.Value]
  }
  deriving (Show, Generic)
 
