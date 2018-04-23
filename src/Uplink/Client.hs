@@ -3,8 +3,6 @@ module Uplink.Client
   ( Handle (..)
 
   , Account.Account (..)
-  , Account.Metadata (..)
-  , AssetAddress.AssetAddress (..)
   , Block.Block (..)
   , Cmd (..)
   , Contract.Contract (..)
@@ -69,14 +67,12 @@ import qualified Data.Serialize as S
 import qualified Address
 import qualified Account
 import qualified Asset
-import qualified Derivation as D
 import qualified Encoding
 import qualified Key
---import qualified RPC
+import qualified Metadata (Metadata(..))
 import qualified SafeString
 import qualified Storage
 import qualified Time
-import qualified Uplink.Client.AssetAddress as AssetAddress
 import qualified Uplink.Client.Block as Block
 import qualified Uplink.Client.Contract as Contract
 import qualified Uplink.Client.Config as Config
@@ -117,7 +113,7 @@ data Handle = Handle
   , getAccount             :: Path -> IO (Item Account.Account)
   , getAccounts            :: Path -> IO (Item [Account.Account])
   , getAsset               :: Path -> IO (Item Asset.Asset)
-  , getAssets              :: Path -> IO (Item [AssetAddress.AssetAddress])
+  , getAssets              :: Path -> IO (Item [Asset.Asset])
   , getBlock               :: Path -> IO (Item Block.Block)
   , getBlocks              :: Path -> IO (Item [Block.Block])
   , getContract            :: Path -> IO (Item Contract.Contract)
@@ -165,8 +161,8 @@ uplinkCirculateAsset h t a = do
 
 uplinkCreateAccount
   :: Handle
-  -> BS.ByteString     -- timezone
-  -> Account.Metadata
+  -> SafeString.SafeString
+  -> Metadata.Metadata
   -> IO (Item RPC.RPCResponse)
 uplinkCreateAccount h tz md = do
   (priv, pub, addr) <- Address.newTriple
@@ -177,9 +173,7 @@ uplinkCreateAccount h tz md = do
 
   where
     header :: Key.PubKey -> Tx.TransactionHeader
-    header pubKey = Tx.TxAccount Tx.CreateAccount { Tx.pubKey = pubToBS pubKey
-                                                  , Tx.timezone = tz
-                                                  , Tx.metadata = md }
+    header pubKey = Tx.TxAccount $ Tx.CreateAccount (pubToBS pubKey) tz md
 
 uplinkCreateAsset
   :: Handle
@@ -187,14 +181,14 @@ uplinkCreateAsset
   -> Int64            -- supply
   -> Maybe Asset.Ref
   -> Asset.AssetType
+  -> Metadata.Metadata
   -> IO (Item RPC.RPCResponse)
-uplinkCreateAsset h n supply mRef atyp = do
+uplinkCreateAsset h n supply mRef atyp md = do
   ts <- Time.now
   let cfg     = config h
       origin  = Config.originAddress cfg
-      da      = D.addrAsset n origin supply mRef atyp ts
       name'   = SafeString.fromBytes' n
-      txAsset = Tx.CreateAsset da name' supply mRef atyp
+      txAsset = Tx.CreateAsset name' supply mRef atyp md
       header = Tx.TxAsset txAsset
 
   sig <- Key.sign (Config.privateKey cfg) $ S.encode header
@@ -211,7 +205,7 @@ uplinkCreateContract h script = do
       cfg        = config h
       origin     = Config.originAddress cfg
       a          = derive ts script
-      txContract = Tx.CreateContract a s ts origin
+      txContract = Tx.CreateContract s
       header    = Tx.TxContract txContract
 
   sig <- Key.sign (Config.privateKey cfg) $ S.encode header
@@ -278,7 +272,7 @@ uplinkAccounts = (`getAccounts` mkPath "accounts")
 uplinkAsset :: Handle -> String -> IO (Item Asset.Asset)
 uplinkAsset h assetId = getAsset h $ mkPathWithId "/assets" assetId
 
-uplinkAssets :: Handle -> IO (Item [AssetAddress.AssetAddress])
+uplinkAssets :: Handle -> IO (Item [Asset.Asset])
 uplinkAssets = (`getAssets` mkPath "assets")
 
 uplinkBlock :: Handle -> String -> IO (Item Block.Block)
@@ -327,8 +321,8 @@ uplinkTransactions h blockId = getTransactions h $ mkPathWithId "/transactions" 
 mkTrans :: Tx.TransactionHeader -> Key.Signature -> Address.Address -> Time.Timestamp -> Cmd
 mkTrans hdr sig addr' ts' = Cmd (Tx.Transaction hdr (Key.encodeSig sig) addr' ts') "Transaction"
 
-pubToBS :: Key.PubKey -> BS.ByteString
-pubToBS = Key.unHexPub . Key.hexPub
+pubToBS :: Key.PubKey -> SafeString.SafeString
+pubToBS = SafeString.fromBytes' . Key.unHexPub . Key.hexPub
 
 mkPath :: String -> Path
 mkPath = Path <$> T.encodeUtf8 . T.pack

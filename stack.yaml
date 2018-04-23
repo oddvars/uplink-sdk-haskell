@@ -15,7 +15,7 @@
 # resolver:
 #  name: custom-snapshot
 #  location: "./custom-snapshot.yaml"
-resolver: lts-9.17
+resolver: lts-10.10
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -39,30 +39,34 @@ packages:
 - .
 - location:
     git: https://github.com/adjoint-io/uplink.git
-    commit: 108ca12d9d63e57b5a8d5c83258d200bf9aebe3c
+    commit:  e2c93e094fe5b48e08d761d311302bafa34a3f2b
   extra-dep: true
 
 - location:
     git: https://github.com/adjoint-io/pedersen-commitment.git
-    commit: f610759235eb777e16091df96fa40dc7dcc2f2a7
+    commit: b32d2183426594a8fa518976159e5a1b09083e51
   extra-dep: true
 
 - location:
-    git: https://github.com/adjoint-io/datetime.git 
-    commit: 070e0332374b3edd8544f70a3e9e514ff5c57cea
+    git: https://github.com/adjoint-io/datetime.git
+    commit: c9165f741634908b1913f0b93b66b7a06a2c298a
   extra-dep: true
 
 - location:
-    git: https://github.com/adjoint-io/merkle-tree.git 
-    commit: a942ee26f56d24473757af5d1bda48c39b2ebd44 
+    git: https://github.com/adjoint-io/merkle-tree.git
+    commit: a942ee26f56d24473757af5d1bda48c39b2ebd44
+  extra-dep: true
+- location:
+    git: https://github.com/sdiehl/repline.git
+    commit: 3474422d974cb264aa96fcfaae31e1969b134815
   extra-dep: true
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
 extra-deps:
-- protolude-0.2
-- syb-0.6
-- hashable-1.2.4.0 # Explicit, because of bug with serializer compat
-- repline-0.1.6.0
+#- protolude-0.2
+#- syb-0.6
+#- hashable-1.2.4.0 # Explicit, because of bug with serializer compat
+#- repline-0.1.6.0
 - pretty-hex-1.0
 - base58-bytestring-0.1.0
 - hexpat-pickle-0.6

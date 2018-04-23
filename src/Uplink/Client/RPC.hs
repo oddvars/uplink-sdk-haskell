@@ -14,6 +14,7 @@ data RPCResponse
   = RPCResp { contents :: Value}
   | RPCRespError RPCResponseError
   | RPCRespOK
+  | RPCTransactionOK { txHash :: Text}
   deriving (Show, Generic, FromJSON)
 
 data RPCResponseError
@@ -42,5 +43,5 @@ instance FromJSON RPCResponseError where
       "ReadOnly"      -> pure ReadOnly
       "Tx"            -> Tx <$> o .: "errorMsg"
       "NotTestNode"   -> pure NotTestNode
-      "NotFound "     -> NotFound <$> o .: "errorMsg"
+      "NotFound"      -> NotFound <$> o .: "errorMsg"
   parseJSON invalid = typeMismatch "RPCResponseError" invalid

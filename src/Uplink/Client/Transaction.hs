@@ -74,10 +74,7 @@ instance FromJSON TransactionHeader
 
 data TxContract
  = CreateContract {
-     address :: Address.Address
-   , script  :: SafeString.SafeString
-   , ts      :: Time.Timestamp
-   , owner   :: Address.Address
+     contract :: SafeString.SafeString
  }
  | Call {
      address :: Address.Address
@@ -88,10 +85,9 @@ data TxContract
 
 instance S.Serialize TxContract where
   put tx = case tx of
-    CreateContract addr scr _ _ -> do
+    CreateContract con -> do
       S.putWord16be 1000
-      Address.putAddress addr
-      SafeString.putSafeString scr
+      SafeString.putSafeString con
 
     Call addr m a -> do
       let bs = SafeString.toBytes m
@@ -102,14 +98,9 @@ instance S.Serialize TxContract where
       S.put a
 
 instance ToJSON   TxContract where
-  toJSON (CreateContract addr scrpt ts' own) = object
+  toJSON (CreateContract con) = object
     [ "tag"      .= ("CreateContract" :: Text)
-    , "contents" .= object
-        [ "address"   .= addr
-        , "script"    .= scrpt
-        , "timestamp" .= ts'
-        , "owner"     .= own
-        ]
+    , "contents" .= object [ "contract"   .= con ]
     ]
   toJSON (Call addr m arg) = object
     [ "tag"       .= ("Call" :: Text)

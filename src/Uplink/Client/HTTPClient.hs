@@ -72,8 +72,6 @@ viewRaw cfg p = do
     else
       Left "error"
 
-  --return $ handleResult res
-
 view :: FromJSON a => Cfg.Config -> U.Path -> IO (U.Item a)
 view cfg p = do
   man <- newManager defaultManagerSettings
@@ -89,7 +87,6 @@ handleResult res =
       Left (T.decodeUtf8 . statusMessage . responseStatus $ res)
 
 parse :: FromJSON a => Either String RPC.RPCResponse -> U.Item a
-parse (Right (RPC.RPCRespError e)) = Left (T.pack . show $ e)
 parse (Right (RPC.RPCResp a))      =
   case fromJSON a of
     Success res -> Right res

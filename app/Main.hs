@@ -11,6 +11,7 @@ import qualified Asset
 import qualified Account
 import qualified Address
 import qualified Key
+import qualified Metadata
 import qualified SafeString
 import qualified Uplink as U
 
@@ -38,12 +39,13 @@ main = do
 accountEx :: U.Config -> IO ()
 accountEx cfg =
   U.withHTTPClient cfg (\h -> U.uplinkCreateAccount h "GMT" meta) >>= print
-  where meta = U.Metadata (Map.fromList[("name", "Haskell")])
+  where meta = Metadata.Metadata (Map.fromList[("name", "Haskell")])
 
 assetEx :: U.Config -> IO ()
 assetEx cfg = do
   U.withHTTPClient cfg U.uplinkAssets >>= print
-  U.withHTTPClient cfg (\h -> U.uplinkCreateAsset h "haskell asset" 100 (Just Asset.USD) Asset.Discrete) >>= print
+  U.withHTTPClient cfg (\h -> U.uplinkCreateAsset h "haskell asset" 100 (Just Asset.USD) Asset.Discrete meta) >>= print
+  where meta = Metadata.Metadata (Map.fromList[("name", "Haskell")])
 
 blocksEx :: U.Config -> IO ()
 blocksEx cfg =
@@ -51,23 +53,26 @@ blocksEx cfg =
 
 contractEx :: U.Config ->  IO ()
 contractEx cfg = do
-  putStrLn "-- all contracts --"
-  U.withHTTPClient cfg U.uplinkContracts >>= print
-
-  putStrLn "-- single contracts --"
-  let cid = "JCEeU4mQ9v6HY6BKoqpdXLjmHo2N2UnAnmkQBobhxrfA"
-  U.withHTTPClient cfg (`U.uplinkContract` cid) >>= print
-  U.withHTTPClient cfg (`U.uplinkContractCallable` cid) >>= print
-
   putStrLn "-- create contract --"
   script <- BS.readFile "/home/oddvar/repos/uplink/contracts/minimal.s"
   U.withHTTPClient cfg (`U.uplinkCreateContract` script) >>= print
 
-  putStrLn "-- call contract --"
-  let method = SafeString.fromBytes' "setX"
-      addr   = Address.fromRaw "JCEeU4mQ9v6HY6BKoqpdXLjmHo2N2UnAnmkQBobhxrfA"
-      args   = []
-  U.withHTTPClient cfg (\h -> U.uplinkCallContract h addr method args ) >>= print
+  putStrLn "-- all contracts --"
+  contracts <- U.withHTTPClient cfg U.uplinkContracts
+
+  case contracts of
+    Right []    -> putStrLn "no contracts found"
+    Right (c:_) -> do
+      let cid = show (U.contractAddress c)
+      U.withHTTPClient cfg (`U.uplinkContract` cid) >>= print
+      U.withHTTPClient cfg (`U.uplinkContractCallable` cid) >>= print
+
+      let method = SafeString.fromBytes' "setX"
+          addr   = Address.fromRaw "JCEeU4mQ9v6HY6BKoqpdXLjmHo2N2UnAnmkQBobhxrfA"
+          args   = []
+      U.withHTTPClient cfg (\h -> U.uplinkCallContract h addr method args ) >>= print
+
+    Left _     -> putStrLn "error"
 
 infoEx :: U.Config -> IO ()
 infoEx cfg = U.withHTTPClient cfg U.uplinkVersion >>= print

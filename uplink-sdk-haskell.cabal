@@ -20,7 +20,6 @@ library
                        Uplink.Client
                        Uplink.Client.Account
                        Uplink.Client.Block
-                       Uplink.Client.AssetAddress
                        Uplink.Client.Config
                        Uplink.Client.Contract
                        Uplink.Client.Mempool
