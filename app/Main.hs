@@ -7,9 +7,9 @@ import qualified Data.ByteString.Lazy as BSL
 import qualified Data.Map as Map
 import qualified Data.Text as T
 
-import qualified Asset
 import qualified Account
-import qualified Address
+import qualified Address as A
+import qualified Asset
 import qualified Key
 import qualified Metadata
 import qualified SafeString
@@ -17,7 +17,7 @@ import qualified Uplink as U
 
 getConfig :: IO U.Config
 getConfig = do
-  let path = "/home/oddvar/repos/uplink/oddvar/"
+  let path = "/home/oddvar/repos/uplink/config/validators/auth0/"
   priv <- BS.readFile (path ++ "key")
   acc  <- BSL.readFile (path ++ "account")
 
@@ -26,8 +26,8 @@ getConfig = do
     (Left e)        -> fail (T.unpack e)
     (Right privKey) -> return $ U.Config privKey (origin account) "http://127.0.0.1:8545"
 
-  where origin :: Maybe Account.Account -> Address.Address
-        origin Nothing  = Address.parseAddress "" -- fix
+  where origin :: Maybe Account.Account -> A.Address A.AAccount
+        origin Nothing  = A.emptyAddr -- fix
         origin (Just a) = Account.address a
 
 main :: IO ()
@@ -54,7 +54,7 @@ blocksEx cfg =
 contractEx :: U.Config ->  IO ()
 contractEx cfg = do
   putStrLn "-- create contract --"
-  script <- BS.readFile "/home/oddvar/repos/uplink/contracts/minimal.s"
+  script <- BS.readFile "/home/oddvar/repos/uplink/examples/minimal.s"
   U.withHTTPClient cfg (`U.uplinkCreateContract` script) >>= print
 
   putStrLn "-- all contracts --"
@@ -68,7 +68,7 @@ contractEx cfg = do
       U.withHTTPClient cfg (`U.uplinkContractCallable` cid) >>= print
 
       let method = SafeString.fromBytes' "setX"
-          addr   = Address.fromRaw "JCEeU4mQ9v6HY6BKoqpdXLjmHo2N2UnAnmkQBobhxrfA"
+          addr   = A.fromRaw "JCEeU4mQ9v6HY6BKoqpdXLjmHo2N2UnAnmkQBobhxrfA"
           args   = []
       U.withHTTPClient cfg (\h -> U.uplinkCallContract h addr method args ) >>= print
 

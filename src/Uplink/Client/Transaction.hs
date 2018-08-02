@@ -18,7 +18,7 @@ import qualified Data.Serialize as S
 import           GHC.Generics
 import           Protolude
 
-import qualified Address
+import qualified Address as A
 import qualified Time
 import qualified Transaction as Tx
 import qualified SafeString
@@ -27,7 +27,7 @@ import qualified Storage
 data Transaction = Transaction
   { header :: TransactionHeader
   , signature :: BS.ByteString
-  , origin    :: Address.Address
+  , origin    :: A.Address A.AAccount
   , timestamp :: Time.Timestamp
   } deriving (Show, Generic)
 
@@ -61,13 +61,14 @@ data TransactionHeader
   deriving (Show, Generic)
 
 instance S.Serialize TransactionHeader where
-  put th =
+  put th = do
     let parts =
           case th of
-            TxContract tx -> S.encode tx
-            TxAsset ax    -> S.encode ax
-            TxAccount ax  -> S.encode ax
-    in S.putByteString parts
+            TxContract tx -> (0, S.encode tx)
+            TxAsset ax    -> (1, S.encode ax)
+            TxAccount ax  -> (2, S.encode ax)
+    S.putWord16be   (fst parts)
+    S.putByteString (snd parts)
 
 instance ToJSON   TransactionHeader
 instance FromJSON TransactionHeader
@@ -77,7 +78,7 @@ data TxContract
      contract :: SafeString.SafeString
  }
  | Call {
-     address :: Address.Address
+     address :: A.Address A.AAccount
    , method  :: SafeString.SafeString
     , args    :: [Storage.Value]
  }
@@ -86,13 +87,13 @@ data TxContract
 instance S.Serialize TxContract where
   put tx = case tx of
     CreateContract con -> do
-      S.putWord16be 1000
+      S.putWord16be 0
       SafeString.putSafeString con
 
     Call addr m a -> do
       let bs = SafeString.toBytes m
-      S.putWord16be 1002
-      Address.putAddress addr
+      S.putWord16be 2
+      A.putAddress addr
       S.putWord64be (fromIntegral $ BS.length bs)
       S.putByteString (SafeString.toBytes m)
       S.put a

@@ -9,15 +9,15 @@ import qualified Data.HashMap.Strict as M
 import qualified Data.Text as T
 import           GHC.Generics
 
-import qualified Address
+import qualified Address as A
 import qualified Time
 
 
 data Contract = Contract
   { script            :: T.Text
   , state             :: T.Text
-  , contractAddress   :: Address.Address
-  , owner             :: Address.Address
+  , contractAddress   :: A.Address A.AAccount
+  , owner             :: A.Address A.AAccount
   , contractTimestamp :: Time.Timestamp
   , storage           :: Object -- todo: storage
   }

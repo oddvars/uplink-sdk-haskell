@@ -64,7 +64,7 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Data.Serialize as S
 
-import qualified Address
+import qualified Address as A
 import qualified Account
 import qualified Asset
 import qualified Encoding
@@ -133,7 +133,7 @@ data Handle = Handle
 -- execute functions
 uplinkCallContract
   :: Handle
-  -> Address.Address
+  -> A.Address A.AAccount
   -> SafeString.SafeString -- method
   -> [Storage.Value] -- args
   -> IO (Item RPC.RPCResponse)
@@ -148,7 +148,7 @@ uplinkCallContract h a m args = do
 
 uplinkCirculateAsset
   :: Handle
-  -> Address.Address -- address of asset
+  -> A.Address A.AAsset -- address of asset
   -> Int64
   -> IO (Item RPC.RPCResponse)
 uplinkCirculateAsset h t a = do
@@ -165,7 +165,7 @@ uplinkCreateAccount
   -> Metadata.Metadata
   -> IO (Item RPC.RPCResponse)
 uplinkCreateAccount h tz md = do
-  (priv, pub, addr) <- Address.newTriple
+  (priv, pub, addr) <- A.newTriple
   ts <- Time.now
   sig <- Key.sign priv $ S.encode (header pub)
 
@@ -204,17 +204,12 @@ uplinkCreateContract h script = do
   let s          = SafeString.fromBytes' script
       cfg        = config h
       origin     = Config.originAddress cfg
-      a          = derive ts script
       txContract = Tx.CreateContract s
       header    = Tx.TxContract txContract
 
   sig <- Key.sign (Config.privateKey cfg) $ S.encode header
 
   h `createContract` mkTrans header sig origin ts
-  where
-    derive :: Time.Timestamp -> BS.ByteString -> Address.Address
-    derive ts scr = Address.fromRaw (Encoding.b58hash (BS.concat [ BSC.pack (show ts), scr]))
-
 
 uplinkRevokeAccount
   :: Handle
@@ -229,11 +224,11 @@ uplinkRevokeAccount h addr = do
 
   where
     header :: Tx.TransactionHeader
-    header = Tx.TxAccount $ Tx.RevokeAccount (Address.fromRaw addr)
+    header = Tx.TxAccount $ Tx.RevokeAccount (A.fromRaw addr)
 
 uplinkRevokeAsset
   :: Handle
-  -> Address.Address -- address to revoke
+  -> A.Address A.AAsset-- address to revoke
   -> IO (Item RPC.RPCResponse)
 uplinkRevokeAsset h addr = do
   let cfg = config h
@@ -248,8 +243,8 @@ uplinkRevokeAsset h addr = do
 
 uplinkTransferAsset
   :: Handle
-  -> Address.Address  -- asset address
-  -> Address.Address  -- to
+  -> A.Address A.AAsset -- asset address
+  -> Asset.Holder       -- to
   -> Int64
   -> IO (Item RPC.RPCResponse)
 uplinkTransferAsset h a t b  = do
@@ -318,11 +313,11 @@ uplinkTransactions :: Handle -> String -> IO (Item [Tx.Transaction])
 uplinkTransactions h blockId = getTransactions h $ mkPathWithId "/transactions" blockId
 
 -- helpers
-mkTrans :: Tx.TransactionHeader -> Key.Signature -> Address.Address -> Time.Timestamp -> Cmd
-mkTrans hdr sig addr' ts' = Cmd (Tx.Transaction hdr (Key.encodeSig sig) addr' ts') "Transaction"
+mkTrans :: Tx.TransactionHeader -> Key.Signature -> A.Address A.AAccount -> Time.Timestamp -> Cmd
+mkTrans hdr sig addr' ts' = Cmd (Tx.Transaction hdr (Encoding.unbase64P (Key.encodeSig sig)) addr' ts') "Transaction"
 
 pubToBS :: Key.PubKey -> SafeString.SafeString
-pubToBS = SafeString.fromBytes' . Key.unHexPub . Key.hexPub
+pubToBS = SafeString.fromBytes' . Key.unHexPub . Key.encodeHexPub
 
 mkPath :: String -> Path
 mkPath = Path <$> T.encodeUtf8 . T.pack
@@ -333,8 +328,8 @@ mkPathWithId path identifier = Path <$> T.encodeUtf8 . T.pack $ path ++ "/" ++ i
 mkPathWithIdAndRoute :: String -> String -> String -> Path
 mkPathWithIdAndRoute path identifier route = Path <$> T.encodeUtf8 . T.pack $ path ++ "/" ++ identifier ++ "/" ++ route
 
-mkAddress :: IO Address.Address
-mkAddress = Address.newAddr
+mkAddress :: IO (A.Address A.AAccount)
+mkAddress = A.newAddr
 
 mkSafeString :: String -> SafeString.SafeString
 mkSafeString = SafeString.fromBytes' . T.encodeUtf8 . T.pack

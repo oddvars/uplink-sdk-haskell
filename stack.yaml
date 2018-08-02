@@ -15,7 +15,7 @@
 # resolver:
 #  name: custom-snapshot
 #  location: "./custom-snapshot.yaml"
-resolver: lts-10.10
+resolver: lts-11.13
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -39,12 +39,12 @@ packages:
 - .
 - location:
     git: https://github.com/adjoint-io/uplink.git
-    commit:  e2c93e094fe5b48e08d761d311302bafa34a3f2b
+    commit: 2ceb81988c30635c9369b26dfd86422c00ec7f47
   extra-dep: true
 
 - location:
     git: https://github.com/adjoint-io/pedersen-commitment.git
-    commit: b32d2183426594a8fa518976159e5a1b09083e51
+    commit: 23f73e6a7b535c8584ce44838c6c7674143ab7cd
   extra-dep: true
 
 - location:
@@ -60,20 +60,25 @@ packages:
     git: https://github.com/sdiehl/repline.git
     commit: 3474422d974cb264aa96fcfaae31e1969b134815
   extra-dep: true
+
+- location:
+    git: https://github.com/adjoint-io/network-transport-tcp-tls.git 
+    commit: db8e2d4ed677e136fb1b7a2666e9a12511ae5d24
+  extra-dep: true
+
+
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
 extra-deps:
-#- protolude-0.2
-#- syb-0.6
-#- hashable-1.2.4.0 # Explicit, because of bug with serializer compat
-#- repline-0.1.6.0
-- pretty-hex-1.0
 - base58-bytestring-0.1.0
 - hexpat-pickle-0.6
-- distributed-process-0.7.3
-- distributed-process-lifted-0.3.0.0
-- distributed-process-monad-control-0.5.1.3
-- postgres-tmp-0.1.0.1
+- postgres-tmp-0.2.0
+- distributed-process-async-0.2.6
+- distributed-process-client-server-0.2.5.1
+- distributed-process-extras-0.3.5
+- distributed-process-supervisor-0.2.1
+
+
 
 # Override default flag values for local packages and extra-deps
 flags: {}

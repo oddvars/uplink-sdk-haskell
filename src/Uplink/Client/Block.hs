@@ -7,7 +7,7 @@ import Data.Aeson.Types
 import qualified Data.Text as T
 import GHC.Generics
 
-import qualified Address
+import qualified Address as A
 import qualified Time
 
 
@@ -27,7 +27,7 @@ instance FromJSON Block where
   parseJSON invalid = typeMismatch "Block" invalid
 
 data BlockHeader = BlockHeader
-  { origin :: Address.Address
+  { origin :: A.Address A.AAccount
   , prevHash :: T.Text
   , merkleRoot :: T.Text
   , timestamp :: Time.Timestamp
@@ -37,7 +37,7 @@ instance FromJSON BlockHeader
 
 data BlockSignature = BlockSignature
   { signature :: T.Text
-  , signerAddr :: Address.Address
+  , signerAddr :: A.Address A.AAccount
   } deriving (Show, Generic)
 
 instance FromJSON BlockSignature
